@@ -526,11 +526,51 @@ async function copyMusicXML() {
   try { await navigator.clipboard.writeText(x); toast("คัดลอก MusicXML แล้ว — วางลงไฟล์ .musicxml ได้เลย"); }
   catch (e) { openModal("คัดลอก MusicXML", `<textarea id="mxText" class="inp" style="width:100%;height:300px;font:11px var(--f-mono)" readonly></textarea><p class="note">เลือกข้อความทั้งหมด (Ctrl+A) แล้วคัดลอก</p>`, [{ label: "ปิด" }]); const ta = document.getElementById("mxText"); ta.value = x; ta.select(); }
 }
+/* ---------- save the project to the computer (to keep editing later) ---------- */
+let projHandle = null, diskSnap = null;
+const canFSA = () => STANDALONE && typeof window.showSaveFilePicker === "function";
+function projName() { return fileBase() + ".nota.json"; }
+function markDiskSaved(name) {
+  diskSnap = snapshot();
+  const t = new Date(), hm = String(t.getHours()).padStart(2, "0") + ":" + String(t.getMinutes()).padStart(2, "0");
+  const st = document.getElementById("docState"); if (st) st.textContent = "บันทึกลงเครื่องแล้ว " + hm + (name ? " · " + name : "");
+}
+async function saveProject(saveAs) {
+  const data = snapshot();
+  if (canFSA()) {
+    try {
+      if (!projHandle || saveAs) projHandle = await window.showSaveFilePicker({ suggestedName: projName(), types: [{ description: "NOTA STUDIO project", accept: { "application/json": [".json"] } }] });
+      const w = await projHandle.createWritable(); await w.write(data); await w.close();
+      markDiskSaved(projHandle.name); toast("บันทึกลงเครื่องแล้ว: " + projHandle.name); return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      projHandle = null; // fall back to a normal download below
+    }
+  }
+  if (STANDALONE) { anchorDownload(projName(), new Blob([data], { type: "application/json" })); markDiskSaved(projName()); return; }
+  const d = await dl();
+  if (!d) { toast("มุมมองนี้บันทึกไฟล์ไม่ได้ — เปิดแอปผ่านลิงก์ Claude ในเบราว์เซอร์ หรือเว็บ GitHub"); return; }
+  try { await d.save({ filename: projName(), data }); markDiskSaved(projName()); toast("บันทึกลงเครื่องแล้ว: " + projName()); }
+  catch (e) { const c = e && e.code; if (c === "declined") toast("ยกเลิกการบันทึก"); else if (c === "rate_limited") toast("มีหน้าต่างบันทึกเปิดอยู่ ลองอีกครั้ง"); else toast("บันทึกไม่สำเร็จ (" + (c || "error") + ")"); }
+}
+async function openProjectPicker() {
+  if (canFSA() && typeof window.showOpenFilePicker === "function") {
+    try {
+      const [h] = await window.showOpenFilePicker({ types: [{ description: "Scores", accept: { "application/json": [".json"], "application/vnd.recordare.musicxml+xml": [".musicxml", ".xml"], "application/vnd.recordare.musicxml": [".mxl"], "application/pdf": [".pdf"], "image/*": [".png", ".jpg", ".jpeg", ".webp"] } }] });
+      const f = await h.getFile();
+      await importFile(f);
+      if (/\.json$/i.test(f.name)) { projHandle = h; markDiskSaved(f.name); }
+      return;
+    } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  document.getElementById("fileIn").click();
+}
 async function importFile(file) {
   try {
     const name = file.name.toLowerCase();
     let snapshotBefore = S ? snapshot() : null;
     if (/\.(pdf|png|jpe?g|webp)$/i.test(name)) return importSheetImage(file);
+    if (!name.endsWith(".json")) projHandle = null;
     if (name.endsWith(".json")) { const o = JSON.parse(await file.text()); if (!o.staves || !o.meta) throw new Error("ไม่ใช่ไฟล์โปรเจกต์ NOTA STUDIO (GW)"); S = o; syncIds(); }
     else if (name.endsWith(".mxl")) fromMusicXML(await readZip(await file.arrayBuffer()));
     else fromMusicXML(await file.text());

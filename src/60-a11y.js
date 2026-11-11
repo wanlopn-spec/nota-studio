@@ -107,7 +107,7 @@ const A11Y_RULES = [
   [/^ลบห้อง (\d+)–(\d+) แล้ว — Ctrl\+Z เพื่อย้อน$/, "Deleted measures $1 to $2. Press Control Z to undo"],
   [/^คัดลอก (\d+) ห้อง × (\d+) บรรทัด$/, "Copied $1 measures, $2 staves"], [/^คัดลอกโน้ต (\d+) ตัว$/, "Copied $1 notes"],
   [/^ทรานสโพส ([+-]?\d+) ครึ่งเสียง$/, "Transposed $1 semitones"], [/^จัดหน้า (\d+) ห้องต่อบรรทัดทุกบรรทัด$/, "$1 measures on every line"],
-  [/^ส่งไฟล์ (.+) แล้ว$/, "Sent file $1"], [/^ดาวน์โหลด (.+)$/, "Downloading $1"], [/^เปิด “(.+)” แล้ว$/, "Opened $1"], [/^สร้าง “(.+)” แล้ว.*$/, "Created $1. Press N to start entering notes"],
+  [/^ส่งไฟล์ (.+) แล้ว$/, "Sent file $1"], [/^บันทึกลงเครื่องแล้ว: (.+)$/, "Saved to your computer: $1"], [/^ดาวน์โหลด (.+)$/, "Downloading $1"], [/^เปิด “(.+)” แล้ว$/, "Opened $1"], [/^สร้าง “(.+)” แล้ว.*$/, "Created $1. Press N to start entering notes"],
   [/^ย้ายไปเสียง (\d)$/, "Moved to voice $1"], [/^เพิ่ม (.+)$/, "Added $1"], [/^บันไดเสียงที่ห้อง (\d+)$/, "Key signature at measure $1"], [/^อัตราจังหวะที่ห้อง (\d+)$/, "Time signature at measure $1"],
   [/^ห้องที่ (\d+)$/, "Measure $1"], [/^(.+) · ห้อง (\d+)$/, "$1, measure $2"], [/^ห้อง (\d+)–(\d+)$/, "Measures $1 to $2"], [/^ห้อง (\d+)$/, "Measure $1"], [/^(\d+) ห้อง$/, "$1 measures"],
   [/^อ่านโน้ตไม่สำเร็จ: (.+)$/, "Could not read the notes: $1"], [/^ทำไม่สำเร็จ: (.+)$/, "That did not work: $1"], [/^เปิดไฟล์ไม่ได้: (.+)$/, "Could not open the file: $1"]
@@ -179,7 +179,7 @@ function a11yActEN(act) {
     zoomin: "Zoom in", zoomout: "Zoom out", zoomfit: "Fit to width", break: "System break", hideempty: "Hide empty staves", names: "Instrument names", play: "Play", stop: "Stop", loop: "Loop selection",
     metro: "Metronome", swing: "Swing eighths", copyxml: "Copy MusicXML", open: "Open MusicXML or project file", openpdf: "Import PDF or image and listen", new: "New score", sample: "Load sample score",
     undo: "Undo", redo: "Redo", copy: "Copy", paste: "Paste", del: "Clear", selall: "Select all", mvup: "Move instrument up", mvdn: "Move instrument down", rm: "Remove instrument",
-    applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
+    save: "Save to computer", saveas: "Save as", applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
   };
   if (M[k] && !a) return M[k];
   switch (k) {
@@ -208,7 +208,7 @@ function a11yActEN(act) {
   return M[k] || "";
 }
 const A11Y_ID_EN = {
-  btnNew: "New score", btnOpen: "Open file", btnUndo: "Undo", btnRedo: "Redo", cmdBtn: "Command search", cmdBtn2: "Command search", openLeft: "Palettes", openRight: "Properties panel", closeLeft: "Close",
+  btnNew: "New score", btnOpen: "Open file", btnSave: "Save to computer", btnUndo: "Undo", btnRedo: "Redo", cmdBtn: "Command search", cmdBtn2: "Command search", openLeft: "Palettes", openRight: "Properties panel", closeLeft: "Close",
   tpPlay: "Play", tpStop: "Stop", tpLoop: "Loop selection", tpMetro: "Metronome", palSearch: "Search symbols", tempoIn: "Tempo", tempoIn2: "Tempo", masterVol: "Volume", rgStaff: "Staff spacing", rgSpace: "Note spacing",
   selPart: "Part", pDyn: "Dynamic", pChord: "Chord symbol", pLyr: "Lyric", pTx: "Staff text", pKey: "Key signature", pTn: "Time signature beats", pTd: "Time signature beat unit", pReh: "Rehearsal mark",
   pBpm: "Tempo", pTt: "Tempo text", pSys: "System text", pBar: "End barline", pRep: "Start repeat", pBrk: "System break after this measure", pConcert: "Concert pitch", pMnum: "Measure numbers",

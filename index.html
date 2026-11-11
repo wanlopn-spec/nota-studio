@@ -241,7 +241,8 @@ input[type=range]{accent-color:var(--accent);width:100%}
       <button class="tbtn mobtoggle" id="cmdBtn2" aria-label="ค้นหาคำสั่ง"><i>⌕</i><small>ค้นหา</small></button>
       <button class="tbtn mobtoggle" id="openLeft"><i>☰</i><small>พาเลต</small></button>
       <button class="tbtn" id="btnNew"><i>＋</i><small>ใหม่</small></button>
-      <button class="tbtn" id="btnOpen"><i>⇪</i><small>เปิด</small></button>
+      <button class="tbtn" id="btnOpen" title="เปิดไฟล์ (Ctrl+O)"><i>⇪</i><small>เปิด</small></button>
+      <button class="tbtn" id="btnSave" data-act="save" title="บันทึกไฟล์ลงเครื่อง (Ctrl+S)"><i>💾</i><small>บันทึก</small></button>
       <button class="tbtn" id="btnA11y" data-act="a11y" aria-pressed="false" title="เสียงนำทางสำหรับผู้พิการทางสายตา (F2)"><i>🔊</i><small>เสียงนำทาง</small></button>
       <div class="langseg" role="group" aria-label="ภาษาเสียงนำทาง">
         <button data-act="a11ylang:th" aria-pressed="false" title="เสียงนำทางภาษาไทย">ไทย</button><button data-act="a11ylang:en" aria-pressed="false" title="Spoken guide in English">EN</button><button data-act="a11ylang:both" aria-pressed="false" title="เสียงนำทางไทยและอังกฤษ (Ctrl+F2)">ไทย+EN</button>
@@ -1123,7 +1124,7 @@ let saveTimer = null;
 function autosave() {
   clearTimeout(saveTimer);
   const st = document.getElementById("docState"); if (st) st.textContent = "กำลังบันทึก…";
-  saveTimer = setTimeout(() => { try { localStorage.setItem("nota-score-v1", snapshot()); } catch (e) { } if (st) st.textContent = "บันทึกในเบราว์เซอร์นี้แล้ว"; }, 400);
+  saveTimer = setTimeout(() => { try { localStorage.setItem("nota-score-v1", snapshot()); } catch (e) { } if (st) st.textContent = (typeof diskSnap !== "undefined" && diskSnap && diskSnap !== snapshot()) ? "ยังไม่ได้บันทึกลงเครื่อง — กด 💾 หรือ Ctrl+S" : "บันทึกในเบราว์เซอร์นี้แล้ว"; }, 400);
 }
 let toastTimer = null;
 function toast(msg) {
@@ -2023,11 +2024,51 @@ async function copyMusicXML() {
   try { await navigator.clipboard.writeText(x); toast("คัดลอก MusicXML แล้ว — วางลงไฟล์ .musicxml ได้เลย"); }
   catch (e) { openModal("คัดลอก MusicXML", `<textarea id="mxText" class="inp" style="width:100%;height:300px;font:11px var(--f-mono)" readonly></textarea><p class="note">เลือกข้อความทั้งหมด (Ctrl+A) แล้วคัดลอก</p>`, [{ label: "ปิด" }]); const ta = document.getElementById("mxText"); ta.value = x; ta.select(); }
 }
+/* ---------- save the project to the computer (to keep editing later) ---------- */
+let projHandle = null, diskSnap = null;
+const canFSA = () => STANDALONE && typeof window.showSaveFilePicker === "function";
+function projName() { return fileBase() + ".nota.json"; }
+function markDiskSaved(name) {
+  diskSnap = snapshot();
+  const t = new Date(), hm = String(t.getHours()).padStart(2, "0") + ":" + String(t.getMinutes()).padStart(2, "0");
+  const st = document.getElementById("docState"); if (st) st.textContent = "บันทึกลงเครื่องแล้ว " + hm + (name ? " · " + name : "");
+}
+async function saveProject(saveAs) {
+  const data = snapshot();
+  if (canFSA()) {
+    try {
+      if (!projHandle || saveAs) projHandle = await window.showSaveFilePicker({ suggestedName: projName(), types: [{ description: "NOTA STUDIO project", accept: { "application/json": [".json"] } }] });
+      const w = await projHandle.createWritable(); await w.write(data); await w.close();
+      markDiskSaved(projHandle.name); toast("บันทึกลงเครื่องแล้ว: " + projHandle.name); return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      projHandle = null; // fall back to a normal download below
+    }
+  }
+  if (STANDALONE) { anchorDownload(projName(), new Blob([data], { type: "application/json" })); markDiskSaved(projName()); return; }
+  const d = await dl();
+  if (!d) { toast("มุมมองนี้บันทึกไฟล์ไม่ได้ — เปิดแอปผ่านลิงก์ Claude ในเบราว์เซอร์ หรือเว็บ GitHub"); return; }
+  try { await d.save({ filename: projName(), data }); markDiskSaved(projName()); toast("บันทึกลงเครื่องแล้ว: " + projName()); }
+  catch (e) { const c = e && e.code; if (c === "declined") toast("ยกเลิกการบันทึก"); else if (c === "rate_limited") toast("มีหน้าต่างบันทึกเปิดอยู่ ลองอีกครั้ง"); else toast("บันทึกไม่สำเร็จ (" + (c || "error") + ")"); }
+}
+async function openProjectPicker() {
+  if (canFSA() && typeof window.showOpenFilePicker === "function") {
+    try {
+      const [h] = await window.showOpenFilePicker({ types: [{ description: "Scores", accept: { "application/json": [".json"], "application/vnd.recordare.musicxml+xml": [".musicxml", ".xml"], "application/vnd.recordare.musicxml": [".mxl"], "application/pdf": [".pdf"], "image/*": [".png", ".jpg", ".jpeg", ".webp"] } }] });
+      const f = await h.getFile();
+      await importFile(f);
+      if (/\.json$/i.test(f.name)) { projHandle = h; markDiskSaved(f.name); }
+      return;
+    } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  document.getElementById("fileIn").click();
+}
 async function importFile(file) {
   try {
     const name = file.name.toLowerCase();
     let snapshotBefore = S ? snapshot() : null;
     if (/\.(pdf|png|jpe?g|webp)$/i.test(name)) return importSheetImage(file);
+    if (!name.endsWith(".json")) projHandle = null;
     if (name.endsWith(".json")) { const o = JSON.parse(await file.text()); if (!o.staves || !o.meta) throw new Error("ไม่ใช่ไฟล์โปรเจกต์ NOTA STUDIO (GW)"); S = o; syncIds(); }
     else if (name.endsWith(".mxl")) fromMusicXML(await readZip(await file.arrayBuffer()));
     else fromMusicXML(await file.text());
@@ -2293,6 +2334,7 @@ function renderRibbon() {
     x += grp("การตีความ", rb("swing", "♫", "Swing 8ths", { pressed: ui.swing }) + `<label class="field" style="padding:0 8px">Tempo ♩ = <input class="inp num" id="tempoIn2" type="number" min="20" max="320" value="${S.tempo}"></label>`);
     x += grp("มิกเซอร์", rb("rtab:mix", "☰", "เปิดมิกเซอร์", { cls: "u" }));
   } else if (ui.tab === "export") {
+    x += grp("ไฟล์งาน (แก้ต่อได้)", rb("save", "💾", "บันทึกลงเครื่อง", { cls: "u", key: "Ctrl+S" }) + rb("saveas", "📝", "บันทึกเป็น…", { cls: "u", key: "Ctrl+Shift+S" }) + rb("open", "📂", "เปิดไฟล์งาน", { cls: "u", key: "Ctrl+O" }), ".nota.json");
     x += grp("แพ็กเกจ", rb("exp:zip", "⬇", "ทั้งหมด .zip", { cls: "u" }), "MusicXML + MIDI + SVG");
     x += grp("รูปแบบเดี่ยว", rb("exp:musicxml", "𝄞", "MusicXML") + rb("exp:midi", "♪", "MIDI") + rb("exp:svg", "◇", "SVG", { cls: "u" }) + rb("exp:png", "▣", "PNG", { cls: "u" }) + rb("exp:json", "{}", "โปรเจกต์", { cls: "u" }));
     x += grp("นำเข้า", rb("open", "⇪", "MusicXML / โปรเจกต์", { cls: "u", key: "Ctrl+O" }) + rb("openpdf", "📄", "PDF / รูปโน้ต → ฟัง", { cls: "u" }), "Claude ช่วยอ่าน PDF");
@@ -2638,7 +2680,7 @@ const COMMANDS = [
   ["Add instrument เพิ่มเครื่องดนตรี", "I", "addinst"], ["Add measure at end เพิ่มห้องท้ายเพลง", "Ctrl+B", "addm:end"], ["Insert measure before แทรกห้องก่อน", "Ins", "addm:before"], ["Insert measure after แทรกห้องหลัง", "Ctrl+Ins", "addm:after"], ["Add several measures เพิ่มหลายห้อง", "", "appendm"], ["Insert several measures แทรกหลายห้อง", "", "insertm"], ["Delete measures ลบห้อง", "Ctrl+Del", "deletem"],
   ["System break ตัดบรรทัด", "Enter", "break"], ["4 measures per line ห้องต่อบรรทัด 4", "", "persys:4"], ["5 measures per line ห้องต่อบรรทัด 5", "", "persys:5"], ["6 measures per line ห้องต่อบรรทัด 6", "", "persys:6"], ["8 measures per line ห้องต่อบรรทัด 8", "", "persys:8"], ["Measures per line (custom) ห้องต่อบรรทัด อื่นๆ", "", "persys:custom"], ["Auto measures per line ห้องต่อบรรทัด อัตโนมัติ", "", "persys:0"], ["Equal measure widths กว้างเท่ากัน", "", "equalw"], ["Page view", "", "view:page"], ["Continuous view", "", "view:cont"], ["Zoom in", "Ctrl+=", "zoomin"], ["Zoom out", "Ctrl+-", "zoomout"], ["Hide empty staves", "", "hideempty"],
   ["Play / Stop เล่น", "Space", "play"], ["Swing eighths", "", "swing"], ["Metronome", "", "metro"], ["Loop selection", "", "loop"], ["Mixer มิกเซอร์", "", "rtab:mix"],
-  ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save project (.json)", "Ctrl+S", "exp:json"], ["Copy MusicXML", "", "copyxml"],
+  ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save to computer บันทึกไฟล์ลงเครื่อง", "Ctrl+S", "save"], ["Save as บันทึกเป็น", "Ctrl+Shift+S", "saveas"], ["Copy MusicXML", "", "copyxml"],
   ["Open / import file เปิดไฟล์", "Ctrl+O", "open"], ["Import PDF / image sheet music นำเข้า PDF รูปโน้ต แล้วฟัง", "", "openpdf"], ["New score สกอร์ใหม่", "Ctrl+N", "new"], ["Load sample score เพลงตัวอย่าง", "", "sample"], ["Undo", "Ctrl+Z", "undo"], ["Redo", "Ctrl+Shift+Z", "redo"],
   ["Select all เลือกทั้งหมด", "Ctrl+A", "selall"], ["Copy", "Ctrl+C", "copy"], ["Paste", "Ctrl+V", "paste"], ["Triplet", "Ctrl+3", "tup"], ["Voice 1 เสียง 1", "Ctrl+Alt+1", "voice:1"], ["Voice 2 เสียง 2", "Ctrl+Alt+2", "voice:2"], ["Voice 3 เสียง 3", "Ctrl+Alt+3", "voice:3"], ["Voice 4 เสียง 4", "Ctrl+Alt+4", "voice:4"], ["Edit title", "", "edit:title"],
   ...Object.entries(ARTS).map(([k, a]) => [a.n, "", "art:" + k]), ...DYNS.map(d => ["Dynamic " + d, "", "dyn:" + d]),
@@ -2720,7 +2762,9 @@ function doAction(a) {
     case "swing": ui.swing = !ui.swing; renderRibbon(); toast(ui.swing ? "Swing 8ths: เปิด" : "Swing 8ths: ปิด"); return;
     case "exp": return arg === "zip" ? exportZip() : exportOne(arg);
     case "copyxml": return copyMusicXML();
-    case "open": return $("fileIn").click();
+    case "open": return openProjectPicker();
+    case "save": return saveProject(false);
+    case "saveas": return saveProject(true);
     case "openpdf": { const f = $("fileIn"); f.setAttribute("accept", ".pdf,.png,.jpg,.jpeg,.webp"); f.click(); setTimeout(() => f.setAttribute("accept", ".musicxml,.xml,.mxl,.json,.pdf,.png,.jpg,.jpeg,.webp"), 1500); return; }
     case "new": return newScoreDialog();
     case "sample": { const prev = snapshot(); loadSample(); undoStack.push(prev); ui.sel = ui.range = ui.anchor = null; ui.part = "all"; afterChange(); renderRibbon(); $("tempoIn").value = S.tempo; return; }
@@ -2793,7 +2837,7 @@ function onKey(e) {
   if (mod && k.toLowerCase() === "m") return go("reh");
   if (mod && k.toLowerCase() === "b") return go("addm:end");
   if (mod && k === "Insert") return go("addm:after");
-  if (mod && k.toLowerCase() === "s") return go("exp:json");
+  if (mod && k.toLowerCase() === "s") return go(e.shiftKey ? "saveas" : "save");
   if (mod && k.toLowerCase() === "o") return go("open");
   if (mod && k.toLowerCase() === "n") return go("new");
   if (mod && k === "3") return go("tup");
@@ -2932,7 +2976,7 @@ function bindStatic() {
   $("palSearch").oninput = renderPalettes;
   $("cmdBtn").onclick = openPalette; $("cmdBtn2").onclick = openPalette;
   $("btnNew").onclick = newScoreDialog;
-  $("btnOpen").onclick = () => $("fileIn").click();
+  $("btnOpen").onclick = () => openProjectPicker();
   $("btnUndo").onclick = undo; $("btnRedo").onclick = redo;
   $("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (f) importFile(f); $("fileIn").value = ""; };
   $("tpPlay").onclick = () => { play(); renderRibbon(); };
@@ -3072,7 +3116,7 @@ const A11Y_RULES = [
   [/^ลบห้อง (\d+)–(\d+) แล้ว — Ctrl\+Z เพื่อย้อน$/, "Deleted measures $1 to $2. Press Control Z to undo"],
   [/^คัดลอก (\d+) ห้อง × (\d+) บรรทัด$/, "Copied $1 measures, $2 staves"], [/^คัดลอกโน้ต (\d+) ตัว$/, "Copied $1 notes"],
   [/^ทรานสโพส ([+-]?\d+) ครึ่งเสียง$/, "Transposed $1 semitones"], [/^จัดหน้า (\d+) ห้องต่อบรรทัดทุกบรรทัด$/, "$1 measures on every line"],
-  [/^ส่งไฟล์ (.+) แล้ว$/, "Sent file $1"], [/^ดาวน์โหลด (.+)$/, "Downloading $1"], [/^เปิด “(.+)” แล้ว$/, "Opened $1"], [/^สร้าง “(.+)” แล้ว.*$/, "Created $1. Press N to start entering notes"],
+  [/^ส่งไฟล์ (.+) แล้ว$/, "Sent file $1"], [/^บันทึกลงเครื่องแล้ว: (.+)$/, "Saved to your computer: $1"], [/^ดาวน์โหลด (.+)$/, "Downloading $1"], [/^เปิด “(.+)” แล้ว$/, "Opened $1"], [/^สร้าง “(.+)” แล้ว.*$/, "Created $1. Press N to start entering notes"],
   [/^ย้ายไปเสียง (\d)$/, "Moved to voice $1"], [/^เพิ่ม (.+)$/, "Added $1"], [/^บันไดเสียงที่ห้อง (\d+)$/, "Key signature at measure $1"], [/^อัตราจังหวะที่ห้อง (\d+)$/, "Time signature at measure $1"],
   [/^ห้องที่ (\d+)$/, "Measure $1"], [/^(.+) · ห้อง (\d+)$/, "$1, measure $2"], [/^ห้อง (\d+)–(\d+)$/, "Measures $1 to $2"], [/^ห้อง (\d+)$/, "Measure $1"], [/^(\d+) ห้อง$/, "$1 measures"],
   [/^อ่านโน้ตไม่สำเร็จ: (.+)$/, "Could not read the notes: $1"], [/^ทำไม่สำเร็จ: (.+)$/, "That did not work: $1"], [/^เปิดไฟล์ไม่ได้: (.+)$/, "Could not open the file: $1"]
@@ -3144,7 +3188,7 @@ function a11yActEN(act) {
     zoomin: "Zoom in", zoomout: "Zoom out", zoomfit: "Fit to width", break: "System break", hideempty: "Hide empty staves", names: "Instrument names", play: "Play", stop: "Stop", loop: "Loop selection",
     metro: "Metronome", swing: "Swing eighths", copyxml: "Copy MusicXML", open: "Open MusicXML or project file", openpdf: "Import PDF or image and listen", new: "New score", sample: "Load sample score",
     undo: "Undo", redo: "Redo", copy: "Copy", paste: "Paste", del: "Clear", selall: "Select all", mvup: "Move instrument up", mvdn: "Move instrument down", rm: "Remove instrument",
-    applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
+    save: "Save to computer", saveas: "Save as", applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
   };
   if (M[k] && !a) return M[k];
   switch (k) {
@@ -3173,7 +3217,7 @@ function a11yActEN(act) {
   return M[k] || "";
 }
 const A11Y_ID_EN = {
-  btnNew: "New score", btnOpen: "Open file", btnUndo: "Undo", btnRedo: "Redo", cmdBtn: "Command search", cmdBtn2: "Command search", openLeft: "Palettes", openRight: "Properties panel", closeLeft: "Close",
+  btnNew: "New score", btnOpen: "Open file", btnSave: "Save to computer", btnUndo: "Undo", btnRedo: "Redo", cmdBtn: "Command search", cmdBtn2: "Command search", openLeft: "Palettes", openRight: "Properties panel", closeLeft: "Close",
   tpPlay: "Play", tpStop: "Stop", tpLoop: "Loop selection", tpMetro: "Metronome", palSearch: "Search symbols", tempoIn: "Tempo", tempoIn2: "Tempo", masterVol: "Volume", rgStaff: "Staff spacing", rgSpace: "Note spacing",
   selPart: "Part", pDyn: "Dynamic", pChord: "Chord symbol", pLyr: "Lyric", pTx: "Staff text", pKey: "Key signature", pTn: "Time signature beats", pTd: "Time signature beat unit", pReh: "Rehearsal mark",
   pBpm: "Tempo", pTt: "Tempo text", pSys: "System text", pBar: "End barline", pRep: "Start repeat", pBrk: "System break after this measure", pConcert: "Concert pitch", pMnum: "Measure numbers",

@@ -58,6 +58,7 @@ function renderRibbon() {
     x += grp("การตีความ", rb("swing", "♫", "Swing 8ths", { pressed: ui.swing }) + `<label class="field" style="padding:0 8px">Tempo ♩ = <input class="inp num" id="tempoIn2" type="number" min="20" max="320" value="${S.tempo}"></label>`);
     x += grp("มิกเซอร์", rb("rtab:mix", "☰", "เปิดมิกเซอร์", { cls: "u" }));
   } else if (ui.tab === "export") {
+    x += grp("ไฟล์งาน (แก้ต่อได้)", rb("save", "💾", "บันทึกลงเครื่อง", { cls: "u", key: "Ctrl+S" }) + rb("saveas", "📝", "บันทึกเป็น…", { cls: "u", key: "Ctrl+Shift+S" }) + rb("open", "📂", "เปิดไฟล์งาน", { cls: "u", key: "Ctrl+O" }), ".nota.json");
     x += grp("แพ็กเกจ", rb("exp:zip", "⬇", "ทั้งหมด .zip", { cls: "u" }), "MusicXML + MIDI + SVG");
     x += grp("รูปแบบเดี่ยว", rb("exp:musicxml", "𝄞", "MusicXML") + rb("exp:midi", "♪", "MIDI") + rb("exp:svg", "◇", "SVG", { cls: "u" }) + rb("exp:png", "▣", "PNG", { cls: "u" }) + rb("exp:json", "{}", "โปรเจกต์", { cls: "u" }));
     x += grp("นำเข้า", rb("open", "⇪", "MusicXML / โปรเจกต์", { cls: "u", key: "Ctrl+O" }) + rb("openpdf", "📄", "PDF / รูปโน้ต → ฟัง", { cls: "u" }), "Claude ช่วยอ่าน PDF");
@@ -403,7 +404,7 @@ const COMMANDS = [
   ["Add instrument เพิ่มเครื่องดนตรี", "I", "addinst"], ["Add measure at end เพิ่มห้องท้ายเพลง", "Ctrl+B", "addm:end"], ["Insert measure before แทรกห้องก่อน", "Ins", "addm:before"], ["Insert measure after แทรกห้องหลัง", "Ctrl+Ins", "addm:after"], ["Add several measures เพิ่มหลายห้อง", "", "appendm"], ["Insert several measures แทรกหลายห้อง", "", "insertm"], ["Delete measures ลบห้อง", "Ctrl+Del", "deletem"],
   ["System break ตัดบรรทัด", "Enter", "break"], ["4 measures per line ห้องต่อบรรทัด 4", "", "persys:4"], ["5 measures per line ห้องต่อบรรทัด 5", "", "persys:5"], ["6 measures per line ห้องต่อบรรทัด 6", "", "persys:6"], ["8 measures per line ห้องต่อบรรทัด 8", "", "persys:8"], ["Measures per line (custom) ห้องต่อบรรทัด อื่นๆ", "", "persys:custom"], ["Auto measures per line ห้องต่อบรรทัด อัตโนมัติ", "", "persys:0"], ["Equal measure widths กว้างเท่ากัน", "", "equalw"], ["Page view", "", "view:page"], ["Continuous view", "", "view:cont"], ["Zoom in", "Ctrl+=", "zoomin"], ["Zoom out", "Ctrl+-", "zoomout"], ["Hide empty staves", "", "hideempty"],
   ["Play / Stop เล่น", "Space", "play"], ["Swing eighths", "", "swing"], ["Metronome", "", "metro"], ["Loop selection", "", "loop"], ["Mixer มิกเซอร์", "", "rtab:mix"],
-  ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save project (.json)", "Ctrl+S", "exp:json"], ["Copy MusicXML", "", "copyxml"],
+  ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save to computer บันทึกไฟล์ลงเครื่อง", "Ctrl+S", "save"], ["Save as บันทึกเป็น", "Ctrl+Shift+S", "saveas"], ["Copy MusicXML", "", "copyxml"],
   ["Open / import file เปิดไฟล์", "Ctrl+O", "open"], ["Import PDF / image sheet music นำเข้า PDF รูปโน้ต แล้วฟัง", "", "openpdf"], ["New score สกอร์ใหม่", "Ctrl+N", "new"], ["Load sample score เพลงตัวอย่าง", "", "sample"], ["Undo", "Ctrl+Z", "undo"], ["Redo", "Ctrl+Shift+Z", "redo"],
   ["Select all เลือกทั้งหมด", "Ctrl+A", "selall"], ["Copy", "Ctrl+C", "copy"], ["Paste", "Ctrl+V", "paste"], ["Triplet", "Ctrl+3", "tup"], ["Voice 1 เสียง 1", "Ctrl+Alt+1", "voice:1"], ["Voice 2 เสียง 2", "Ctrl+Alt+2", "voice:2"], ["Voice 3 เสียง 3", "Ctrl+Alt+3", "voice:3"], ["Voice 4 เสียง 4", "Ctrl+Alt+4", "voice:4"], ["Edit title", "", "edit:title"],
   ...Object.entries(ARTS).map(([k, a]) => [a.n, "", "art:" + k]), ...DYNS.map(d => ["Dynamic " + d, "", "dyn:" + d]),
@@ -485,7 +486,9 @@ function doAction(a) {
     case "swing": ui.swing = !ui.swing; renderRibbon(); toast(ui.swing ? "Swing 8ths: เปิด" : "Swing 8ths: ปิด"); return;
     case "exp": return arg === "zip" ? exportZip() : exportOne(arg);
     case "copyxml": return copyMusicXML();
-    case "open": return $("fileIn").click();
+    case "open": return openProjectPicker();
+    case "save": return saveProject(false);
+    case "saveas": return saveProject(true);
     case "openpdf": { const f = $("fileIn"); f.setAttribute("accept", ".pdf,.png,.jpg,.jpeg,.webp"); f.click(); setTimeout(() => f.setAttribute("accept", ".musicxml,.xml,.mxl,.json,.pdf,.png,.jpg,.jpeg,.webp"), 1500); return; }
     case "new": return newScoreDialog();
     case "sample": { const prev = snapshot(); loadSample(); undoStack.push(prev); ui.sel = ui.range = ui.anchor = null; ui.part = "all"; afterChange(); renderRibbon(); $("tempoIn").value = S.tempo; return; }
@@ -558,7 +561,7 @@ function onKey(e) {
   if (mod && k.toLowerCase() === "m") return go("reh");
   if (mod && k.toLowerCase() === "b") return go("addm:end");
   if (mod && k === "Insert") return go("addm:after");
-  if (mod && k.toLowerCase() === "s") return go("exp:json");
+  if (mod && k.toLowerCase() === "s") return go(e.shiftKey ? "saveas" : "save");
   if (mod && k.toLowerCase() === "o") return go("open");
   if (mod && k.toLowerCase() === "n") return go("new");
   if (mod && k === "3") return go("tup");
@@ -697,7 +700,7 @@ function bindStatic() {
   $("palSearch").oninput = renderPalettes;
   $("cmdBtn").onclick = openPalette; $("cmdBtn2").onclick = openPalette;
   $("btnNew").onclick = newScoreDialog;
-  $("btnOpen").onclick = () => $("fileIn").click();
+  $("btnOpen").onclick = () => openProjectPicker();
   $("btnUndo").onclick = undo; $("btnRedo").onclick = redo;
   $("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (f) importFile(f); $("fileIn").value = ""; };
   $("tpPlay").onclick = () => { play(); renderRibbon(); };

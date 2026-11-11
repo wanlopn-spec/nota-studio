@@ -25,7 +25,7 @@ let saveTimer = null;
 function autosave() {
   clearTimeout(saveTimer);
   const st = document.getElementById("docState"); if (st) st.textContent = "กำลังบันทึก…";
-  saveTimer = setTimeout(() => { try { localStorage.setItem("nota-score-v1", snapshot()); } catch (e) { } if (st) st.textContent = "บันทึกในเบราว์เซอร์นี้แล้ว"; }, 400);
+  saveTimer = setTimeout(() => { try { localStorage.setItem("nota-score-v1", snapshot()); } catch (e) { } if (st) st.textContent = (typeof diskSnap !== "undefined" && diskSnap && diskSnap !== snapshot()) ? "ยังไม่ได้บันทึกลงเครื่อง — กด 💾 หรือ Ctrl+S" : "บันทึกในเบราว์เซอร์นี้แล้ว"; }, 400);
 }
 let toastTimer = null;
 function toast(msg) {
