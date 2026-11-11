@@ -179,7 +179,7 @@ function a11yActEN(act) {
     zoomin: "Zoom in", zoomout: "Zoom out", zoomfit: "Fit to width", break: "System break", hideempty: "Hide empty staves", names: "Instrument names", play: "Play", stop: "Stop", loop: "Loop selection",
     metro: "Metronome", swing: "Swing eighths", copyxml: "Copy MusicXML", open: "Open MusicXML or project file", openpdf: "Import PDF or image and listen", new: "New score", sample: "Load sample score",
     undo: "Undo", redo: "Redo", copy: "Copy", paste: "Paste", del: "Clear", selall: "Select all", mvup: "Move instrument up", mvdn: "Move instrument down", rm: "Remove instrument",
-    applytime: "Apply time signature", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
+    applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
   };
   if (M[k] && !a) return M[k];
   switch (k) {
@@ -203,6 +203,7 @@ function a11yActEN(act) {
     case "mute": return "Mute " + ((S.staves[+a] || {}).name || ""); case "solo": return "Solo " + ((S.staves[+a] || {}).name || "");
     case "persys": return a === "0" ? "Automatic measures per line" : a === "custom" ? "Custom measures per line" : a + " measures per line";
     case "voice": return "Voice " + a;
+    case "a11ylang": return { th: "Thai voice", en: "English voice", both: "Thai and English voice" }[a] || "";
   }
   return M[k] || "";
 }
@@ -357,9 +358,11 @@ function a11yToggle(force) {
     if (warn) toast("ยังไม่มีเสียงภาษาไทยในเครื่องนี้ — เปิดตั้งค่าเสียงนำทางเพื่อดูวิธีติดตั้ง");
   } else toast("ปิดเสียงนำทางแล้ว");
 }
-function a11ySetLang(lang) {
-  A11Y.lang = lang; a11ySave(); renderStatus();
+function a11yLangButtons() { document.querySelectorAll('[data-act^="a11ylang:"]').forEach(b => b.setAttribute("aria-pressed", String(b.dataset.act === "a11ylang:" + A11Y.lang))); }
+function a11ySetLang(lang, fromButton) {
+  A11Y.lang = lang; a11ySave(); renderStatus(); a11yLangButtons();
   const sel = document.getElementById("a1Lang"); if (sel) sel.value = lang;
+  if (fromButton && !A11Y.on) { a11yToggle(true); return; }
   a11ySpeak(lg => LG(lg, "ภาษาเสียงนำทาง: " + A11Y_LANGNAME[lang], "Spoken guide language: " + { th: "Thai", en: "English", both: "Thai and English" }[lang]), "state", true);
 }
 function a11yCycleLang() { a11ySetLang({ th: "en", en: "both", both: "th" }[A11Y.lang] || "th"); }
@@ -472,7 +475,7 @@ function a11yInit() {
     if (a === "a11yset") return a11ySettings();
     if (a === "whereami") return a11yWhere();
     if (a === "a11ylang") return a11yCycleLang();
-    if (a && a.startsWith("a11ylang:")) return a11ySetLang(a.slice(9));
+    if (a && a.startsWith("a11ylang:")) return a11ySetLang(a.slice(9), true);
     return _do.apply(this, arguments);
   };
   COMMANDS.push(["Spoken guide เสียงนำทาง เปิดปิด (ผู้พิการทางสายตา)", "F2", "a11y"], ["Spoken guide settings ตั้งค่าเสียงนำทาง", "", "a11yset"], ["Where am I ตำแหน่งปัจจุบัน", "Shift+F2", "whereami"],
@@ -540,7 +543,7 @@ function a11yInit() {
   });
   a11yPrev = a11ySig();
   const b = document.getElementById("btnA11y"); if (b) b.setAttribute("aria-pressed", String(A11Y.on));
-  renderStatus();
+  renderStatus(); a11yLangButtons();
 }
 function a11yGreet() { a11yGreeted = true; setTimeout(() => a11ySpeak(lg => LG(lg, "เสียงนำทางพร้อมใช้งาน. กด Shift F2 เพื่อฟังตำแหน่ง, F2 เพื่อปิด", "Spoken guide ready. Press Shift F2 to hear your position, F2 to turn it off"), "queue"), 150); }
 if (window.Vex) a11yInit(); else window.addEventListener("load", () => { if (window.Vex) a11yInit(); });

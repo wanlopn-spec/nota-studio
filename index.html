@@ -192,6 +192,12 @@ input[type=range]{accent-color:var(--accent);width:100%}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
 .skiplink{position:fixed;z-index:200;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));transform:translateY(-300%);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font-weight:700}
 .skiplink:focus{transform:none}
+.langseg{display:inline-flex;align-self:center;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;margin:0 4px;flex:none}
+.langseg button{background:none;border:0;padding:5px 9px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.langseg button+button{border-left:1px solid var(--line-2)}
+.langseg button:hover{color:var(--fg);background:var(--panel-2)}
+.langseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:860px){.langseg button{padding:5px 6px;font-size:10.5px}}
 #btnA11y[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 .canvas:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
 .presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
@@ -237,6 +243,9 @@ input[type=range]{accent-color:var(--accent);width:100%}
       <button class="tbtn" id="btnNew"><i>＋</i><small>ใหม่</small></button>
       <button class="tbtn" id="btnOpen"><i>⇪</i><small>เปิด</small></button>
       <button class="tbtn" id="btnA11y" data-act="a11y" aria-pressed="false" title="เสียงนำทางสำหรับผู้พิการทางสายตา (F2)"><i>🔊</i><small>เสียงนำทาง</small></button>
+      <div class="langseg" role="group" aria-label="ภาษาเสียงนำทาง">
+        <button data-act="a11ylang:th" aria-pressed="false" title="เสียงนำทางภาษาไทย">ไทย</button><button data-act="a11ylang:en" aria-pressed="false" title="Spoken guide in English">EN</button><button data-act="a11ylang:both" aria-pressed="false" title="เสียงนำทางไทยและอังกฤษ (Ctrl+F2)">ไทย+EN</button>
+      </div>
       <button class="tbtn" id="btnTheme" data-act="theme" title="ปรับโทนสี"><i>🎨</i><small>ธีม</small></button>
       <button class="tbtn" id="btnUndo"><i>↶</i><small>เลิกทำ</small></button>
       <button class="tbtn" id="btnRedo"><i>↷</i><small>ทำซ้ำ</small></button>
@@ -3135,7 +3144,7 @@ function a11yActEN(act) {
     zoomin: "Zoom in", zoomout: "Zoom out", zoomfit: "Fit to width", break: "System break", hideempty: "Hide empty staves", names: "Instrument names", play: "Play", stop: "Stop", loop: "Loop selection",
     metro: "Metronome", swing: "Swing eighths", copyxml: "Copy MusicXML", open: "Open MusicXML or project file", openpdf: "Import PDF or image and listen", new: "New score", sample: "Load sample score",
     undo: "Undo", redo: "Redo", copy: "Copy", paste: "Paste", del: "Clear", selall: "Select all", mvup: "Move instrument up", mvdn: "Move instrument down", rm: "Remove instrument",
-    applytime: "Apply time signature", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
+    applytime: "Apply time signature", a11ylang: "Change spoken guide language", theme: "Color theme", equalw: "Equal measure widths", a11y: "Spoken guide on or off", a11yset: "Spoken guide settings", whereami: "Where am I"
   };
   if (M[k] && !a) return M[k];
   switch (k) {
@@ -3159,6 +3168,7 @@ function a11yActEN(act) {
     case "mute": return "Mute " + ((S.staves[+a] || {}).name || ""); case "solo": return "Solo " + ((S.staves[+a] || {}).name || "");
     case "persys": return a === "0" ? "Automatic measures per line" : a === "custom" ? "Custom measures per line" : a + " measures per line";
     case "voice": return "Voice " + a;
+    case "a11ylang": return { th: "Thai voice", en: "English voice", both: "Thai and English voice" }[a] || "";
   }
   return M[k] || "";
 }
@@ -3313,9 +3323,11 @@ function a11yToggle(force) {
     if (warn) toast("ยังไม่มีเสียงภาษาไทยในเครื่องนี้ — เปิดตั้งค่าเสียงนำทางเพื่อดูวิธีติดตั้ง");
   } else toast("ปิดเสียงนำทางแล้ว");
 }
-function a11ySetLang(lang) {
-  A11Y.lang = lang; a11ySave(); renderStatus();
+function a11yLangButtons() { document.querySelectorAll('[data-act^="a11ylang:"]').forEach(b => b.setAttribute("aria-pressed", String(b.dataset.act === "a11ylang:" + A11Y.lang))); }
+function a11ySetLang(lang, fromButton) {
+  A11Y.lang = lang; a11ySave(); renderStatus(); a11yLangButtons();
   const sel = document.getElementById("a1Lang"); if (sel) sel.value = lang;
+  if (fromButton && !A11Y.on) { a11yToggle(true); return; }
   a11ySpeak(lg => LG(lg, "ภาษาเสียงนำทาง: " + A11Y_LANGNAME[lang], "Spoken guide language: " + { th: "Thai", en: "English", both: "Thai and English" }[lang]), "state", true);
 }
 function a11yCycleLang() { a11ySetLang({ th: "en", en: "both", both: "th" }[A11Y.lang] || "th"); }
@@ -3428,7 +3440,7 @@ function a11yInit() {
     if (a === "a11yset") return a11ySettings();
     if (a === "whereami") return a11yWhere();
     if (a === "a11ylang") return a11yCycleLang();
-    if (a && a.startsWith("a11ylang:")) return a11ySetLang(a.slice(9));
+    if (a && a.startsWith("a11ylang:")) return a11ySetLang(a.slice(9), true);
     return _do.apply(this, arguments);
   };
   COMMANDS.push(["Spoken guide เสียงนำทาง เปิดปิด (ผู้พิการทางสายตา)", "F2", "a11y"], ["Spoken guide settings ตั้งค่าเสียงนำทาง", "", "a11yset"], ["Where am I ตำแหน่งปัจจุบัน", "Shift+F2", "whereami"],
@@ -3496,7 +3508,7 @@ function a11yInit() {
   });
   a11yPrev = a11ySig();
   const b = document.getElementById("btnA11y"); if (b) b.setAttribute("aria-pressed", String(A11Y.on));
-  renderStatus();
+  renderStatus(); a11yLangButtons();
 }
 function a11yGreet() { a11yGreeted = true; setTimeout(() => a11ySpeak(lg => LG(lg, "เสียงนำทางพร้อมใช้งาน. กด Shift F2 เพื่อฟังตำแหน่ง, F2 เพื่อปิด", "Spoken guide ready. Press Shift F2 to hear your position, F2 to turn it off"), "queue"), 150); }
 if (window.Vex) a11yInit(); else window.addEventListener("load", () => { if (window.Vex) a11yInit(); });
