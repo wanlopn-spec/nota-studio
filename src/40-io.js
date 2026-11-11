@@ -483,10 +483,12 @@ async function saveFile(filename, data) {
 function pageSVGString(i) {
   const pg = LAY.pages[i]; if (!pg) return null;
   const clone = pg.svg.cloneNode(true);
-  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg"); clone.setAttribute("width", pg.w); clone.setAttribute("height", pg.h); clone.removeAttribute("style");
+  clone.removeAttribute("xmlns"); clone.setAttribute("width", pg.w); clone.setAttribute("height", pg.h); clone.removeAttribute("style");
   const bgr = document.createElementNS("http://www.w3.org/2000/svg", "rect"); bgr.setAttribute("width", "100%"); bgr.setAttribute("height", "100%"); bgr.setAttribute("fill", "#ffffff"); clone.insertBefore(bgr, clone.firstChild);
   clone.querySelectorAll(".bg").forEach(g => g.remove());
-  return new XMLSerializer().serializeToString(clone);
+  let out = new XMLSerializer().serializeToString(clone);
+  if (!/^<svg[^>]*xmlns=/.test(out)) out = out.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  return out;
 }
 async function exportZip() {
   const savedSel = [ui.sel, ui.range, ui.anchor, ui.input]; ui.sel = ui.range = ui.anchor = null; ui.input = false; render();
@@ -528,6 +530,7 @@ async function importFile(file) {
   try {
     const name = file.name.toLowerCase();
     let snapshotBefore = S ? snapshot() : null;
+    if (/\.(pdf|png|jpe?g|webp)$/i.test(name)) return importSheetImage(file);
     if (name.endsWith(".json")) { const o = JSON.parse(await file.text()); if (!o.staves || !o.meta) throw new Error("ไม่ใช่ไฟล์โปรเจกต์ NOTA STUDIO (GW)"); S = o; syncIds(); }
     else if (name.endsWith(".mxl")) fromMusicXML(await readZip(await file.arrayBuffer()));
     else fromMusicXML(await file.text());

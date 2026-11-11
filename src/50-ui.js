@@ -60,7 +60,8 @@ function renderRibbon() {
   } else if (ui.tab === "export") {
     x += grp("แพ็กเกจ", rb("exp:zip", "⬇", "ทั้งหมด .zip", { cls: "u" }), "MusicXML + MIDI + SVG");
     x += grp("รูปแบบเดี่ยว", rb("exp:musicxml", "𝄞", "MusicXML") + rb("exp:midi", "♪", "MIDI") + rb("exp:svg", "◇", "SVG", { cls: "u" }) + rb("exp:png", "▣", "PNG", { cls: "u" }) + rb("exp:json", "{}", "โปรเจกต์", { cls: "u" }));
-    x += grp("อื่น ๆ", rb("copyxml", "⧉", "คัดลอก MusicXML", { cls: "u" }) + rb("open", "⇪", "นำเข้าไฟล์", { cls: "u", key: "Ctrl+O" }));
+    x += grp("นำเข้า", rb("open", "⇪", "MusicXML / โปรเจกต์", { cls: "u", key: "Ctrl+O" }) + rb("openpdf", "📄", "PDF / รูปโน้ต → ฟัง", { cls: "u" }), "Claude ช่วยอ่าน PDF");
+    x += grp("อื่น ๆ", rb("copyxml", "⧉", "คัดลอก MusicXML", { cls: "u" }));
   }
   r.innerHTML = x;
   const rs = $("rgStaff"); if (rs) rs.oninput = () => { ui.staffDist = +rs.value; render(); };
@@ -403,7 +404,7 @@ const COMMANDS = [
   ["System break ตัดบรรทัด", "Enter", "break"], ["4 measures per line ห้องต่อบรรทัด 4", "", "persys:4"], ["5 measures per line ห้องต่อบรรทัด 5", "", "persys:5"], ["6 measures per line ห้องต่อบรรทัด 6", "", "persys:6"], ["8 measures per line ห้องต่อบรรทัด 8", "", "persys:8"], ["Measures per line (custom) ห้องต่อบรรทัด อื่นๆ", "", "persys:custom"], ["Auto measures per line ห้องต่อบรรทัด อัตโนมัติ", "", "persys:0"], ["Equal measure widths กว้างเท่ากัน", "", "equalw"], ["Page view", "", "view:page"], ["Continuous view", "", "view:cont"], ["Zoom in", "Ctrl+=", "zoomin"], ["Zoom out", "Ctrl+-", "zoomout"], ["Hide empty staves", "", "hideempty"],
   ["Play / Stop เล่น", "Space", "play"], ["Swing eighths", "", "swing"], ["Metronome", "", "metro"], ["Loop selection", "", "loop"], ["Mixer มิกเซอร์", "", "rtab:mix"],
   ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save project (.json)", "Ctrl+S", "exp:json"], ["Copy MusicXML", "", "copyxml"],
-  ["Open / import file เปิดไฟล์", "Ctrl+O", "open"], ["New score สกอร์ใหม่", "Ctrl+N", "new"], ["Load sample score เพลงตัวอย่าง", "", "sample"], ["Undo", "Ctrl+Z", "undo"], ["Redo", "Ctrl+Shift+Z", "redo"],
+  ["Open / import file เปิดไฟล์", "Ctrl+O", "open"], ["Import PDF / image sheet music นำเข้า PDF รูปโน้ต แล้วฟัง", "", "openpdf"], ["New score สกอร์ใหม่", "Ctrl+N", "new"], ["Load sample score เพลงตัวอย่าง", "", "sample"], ["Undo", "Ctrl+Z", "undo"], ["Redo", "Ctrl+Shift+Z", "redo"],
   ["Select all เลือกทั้งหมด", "Ctrl+A", "selall"], ["Copy", "Ctrl+C", "copy"], ["Paste", "Ctrl+V", "paste"], ["Triplet", "Ctrl+3", "tup"], ["Voice 1 เสียง 1", "Ctrl+Alt+1", "voice:1"], ["Voice 2 เสียง 2", "Ctrl+Alt+2", "voice:2"], ["Voice 3 เสียง 3", "Ctrl+Alt+3", "voice:3"], ["Voice 4 เสียง 4", "Ctrl+Alt+4", "voice:4"], ["Edit title", "", "edit:title"],
   ...Object.entries(ARTS).map(([k, a]) => [a.n, "", "art:" + k]), ...DYNS.map(d => ["Dynamic " + d, "", "dyn:" + d]),
   ["Theme ธีม ปรับโทนสี", "", "theme"], ["Treble clef", "", "clef:treble"], ["Bass clef", "", "clef:bass"], ["Alto clef", "", "clef:alto"], ["Double barline", "", "bar:double"], ["Final barline", "", "bar:end"], ["Start repeat", "", "bar:repBeg"], ["End repeat", "", "bar:repEnd"],
@@ -485,6 +486,7 @@ function doAction(a) {
     case "exp": return arg === "zip" ? exportZip() : exportOne(arg);
     case "copyxml": return copyMusicXML();
     case "open": return $("fileIn").click();
+    case "openpdf": { const f = $("fileIn"); f.setAttribute("accept", ".pdf,.png,.jpg,.jpeg,.webp"); f.click(); setTimeout(() => f.setAttribute("accept", ".musicxml,.xml,.mxl,.json,.pdf,.png,.jpg,.jpeg,.webp"), 1500); return; }
     case "new": return newScoreDialog();
     case "sample": { const prev = snapshot(); loadSample(); undoStack.push(prev); ui.sel = ui.range = ui.anchor = null; ui.part = "all"; afterChange(); renderRibbon(); $("tempoIn").value = S.tempo; return; }
     case "undo": return undo();
