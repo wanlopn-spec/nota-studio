@@ -247,7 +247,7 @@ function parseSeq(str) {
   }));
 }
 function loadSample() {
-  newScore({ title: "Bangkok Night Blues", subtitle: "for jazz combo", composer: "Nota Studio · ตัวอย่าง", key: -2, time: [4, 4], tempo: 132, measures: 12, template: "Jazz combo",
+  newScore({ title: "Bangkok Night Blues", subtitle: "for jazz combo", composer: "NOTA STUDIO (GW) · ตัวอย่าง", key: -2, time: [4, 4], tempo: 132, measures: 12, template: "Jazz combo",
     insts: ["altosax", "trumpet", "trombone", "piano", "contrabass", "drums"] });
   S.tempoText = "Medium Swing";
   const [alto, tpt, tbn, rh, lh, bass, drums] = S.staves;

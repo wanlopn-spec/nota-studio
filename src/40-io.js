@@ -209,7 +209,7 @@ function parseChord(c) {
 }
 function toMusicXML() {
   const exportPitch = !ui.concert; const savedC = ui.concert; ui.concert = false;
-  let x = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<score-partwise version="4.0">\n<work><work-title>${esc(S.title)}</work-title></work>\n<identification>${S.composer ? `<creator type="composer">${esc(S.composer)}</creator>` : ""}${S.lyricist ? `<creator type="lyricist">${esc(S.lyricist)}</creator>` : ""}<encoding><software>Nota Studio</software></encoding></identification>\n<part-list>\n`;
+  let x = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<score-partwise version="4.0">\n<work><work-title>${esc(S.title)}</work-title></work>\n<identification>${S.composer ? `<creator type="composer">${esc(S.composer)}</creator>` : ""}${S.lyricist ? `<creator type="lyricist">${esc(S.lyricist)}</creator>` : ""}<encoding><software>NOTA STUDIO (GW)</software></encoding></identification>\n<part-list>\n`;
   S.staves.forEach((st, i) => { x += `<score-part id="P${i + 1}"><part-name>${esc(st.name + (st.group ? (st.gpos ? " (LH)" : " (RH)") : ""))}</part-name><part-abbreviation>${esc(st.short)}</part-abbreviation><score-instrument id="P${i + 1}-I1"><instrument-name>${esc(st.name)}</instrument-name></score-instrument><midi-instrument id="P${i + 1}-I1"><midi-channel>${st.clef === "percussion" ? 10 : (i % 15) + 1}</midi-channel><midi-program>${(st.gm || 0) + 1}</midi-program></midi-instrument></score-part>\n`; });
   x += `</part-list>\n`;
   const spanStart = {}, spanEnd = {}; S.spans.forEach((sp, k) => { (spanStart[sp.a] = spanStart[sp.a] || []).push([sp, k]); (spanEnd[sp.b] = spanEnd[sp.b] || []).push([sp, k]); });
@@ -528,7 +528,7 @@ async function importFile(file) {
   try {
     const name = file.name.toLowerCase();
     let snapshotBefore = S ? snapshot() : null;
-    if (name.endsWith(".json")) { const o = JSON.parse(await file.text()); if (!o.staves || !o.meta) throw new Error("ไม่ใช่ไฟล์โปรเจกต์ Nota"); S = o; syncIds(); }
+    if (name.endsWith(".json")) { const o = JSON.parse(await file.text()); if (!o.staves || !o.meta) throw new Error("ไม่ใช่ไฟล์โปรเจกต์ NOTA STUDIO (GW)"); S = o; syncIds(); }
     else if (name.endsWith(".mxl")) fromMusicXML(await readZip(await file.arrayBuffer()));
     else fromMusicXML(await file.text());
     if (snapshotBefore) { undoStack.push(snapshotBefore); redoStack.length = 0; }
