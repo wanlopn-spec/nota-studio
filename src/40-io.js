@@ -119,9 +119,11 @@ function play() {
   const from = ui.range ? ui.range.m1 : ui.sel ? ui.sel.m : 0;
   const perf = buildPerformance(from, ui.loop && ui.range ? ui.range : null);
   const start = ac.currentTime + .08;
-  for (const n of perf.notes) { const st = S.staves[n.si]; const out = ac.createGain(); out.gain.value = st.vol; out.connect(master); synth(ac, out, st.timbre, n.midi, start + n.t, Math.max(.05, n.dur), n.vel); }
+  const chains = S.staves.map(st => outKind(st) === "midi" ? null : buildChain(ac, st, master));
+  for (const n of perf.notes) { const ch = chains[n.si]; if (!ch) continue; const st = S.staves[n.si]; synth(ac, ch.input, st.timbre, n.midi, start + n.t, Math.max(.05, n.dur), n.vel); }
+  const midiUsed = scheduleMIDI(perf, start, ac);
   if (ui.metro) for (const ms of perf.measures) { const [num, den] = timeAt(ms.m); const step = 1920 / den; for (let k = 0; k < num; k++) { const t = start + ms.t0 + k * step * ms.spt; const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = k === 0 ? 1600 : 1100; g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05); o.connect(g); g.connect(master); o.start(t); o.stop(t + .06); } }
-  playing = { start, perf, raf: 0 };
+  playing = { start, perf, raf: 0, chains, midiUsed };
   document.getElementById("tpPlay").textContent = "❚❚";
   const tick = () => {
     if (!playing) return;
@@ -137,6 +139,7 @@ function play() {
 function stop() {
   if (!playing) return;
   cancelAnimationFrame(playing.raf);
+  midiPanic(playing.midiUsed); (playing.chains || []).forEach(c => c && c.fx.forEach(f => f.node.stop && f.node.stop()));
   try { master.gain.setTargetAtTime(0, AC.currentTime, .02); const mm = master; setTimeout(() => { try { mm.disconnect(); } catch (e) { } }, 200); } catch (e) { }
   playing = null; document.getElementById("tpPlay").textContent = "▶";
   positionPlayhead();
@@ -163,7 +166,12 @@ function positionPlayhead(follow) {
   }
 }
 function playPreview(midi, st) {
-  try { const ac = audio(); const g = ac.createGain(); g.gain.value = .3 * st.vol; g.connect(ac.destination); synth(ac, g, st.timbre, midi, ac.currentTime + .01, .35, .6); } catch (e) { }
+  try {
+    const si = S.staves.indexOf(st);
+    if (outKind(st) !== "app" && MIDIIO.access) { const port = midiPortFor(st); if (port) { const ch = midiChannel(st, si); port.send([0x90 | ch, midi, 80]); port.send([0x80 | ch, midi, 0], performance.now() + 350); } if (outKind(st) === "midi") return; }
+    const ac = audio(); const g = ac.createGain(); g.gain.value = .45; g.connect(ac.destination); const chn = buildChain(ac, st, g); synth(ac, chn.input, st.timbre, midi, ac.currentTime + .01, .35, .6);
+    setTimeout(() => { try { g.disconnect(); chn.fx.forEach(f => f.node.stop && f.node.stop()); } catch (e) { } }, 4000);
+  } catch (e) { }
 }
 
 /* ================= MIDI ================= */
@@ -177,10 +185,11 @@ function toMidi() {
   tracks.push(tr0);
   const secToTick = s => Math.round(s * bpm0 / 60 * TPQ);
   S.staves.forEach((st, si) => {
-    const ch = st.clef === "percussion" ? 9 : (si >= 9 ? si + 1 : si) % 16;
+    const ch = midiChannel(st, si);
     const nameB = [...new TextEncoder().encode(st.name)];
     const evs = [{ t: 0, d: [0xff, 0x03, ...vlq(nameB.length), ...nameB] }];
     if (ch !== 9) evs.push({ t: 0, d: [0xc0 | ch, st.gm & 127] });
+    evs.push({ t: 0, d: [0xb0 | ch, 7, Math.round(Math.max(0, Math.min(1, st.vol)) * 127)] }, { t: 0, d: [0xb0 | ch, 10, Math.round(((st.pan || 0) + 1) * 63.5)] });
     for (const n of perf.notes) if (n.si === si) {
       const t1 = secToTick(n.t), t2 = Math.max(t1 + 10, secToTick(n.t + n.dur)), v = Math.max(1, Math.min(127, Math.round(n.vel * 127)));
       evs.push({ t: t1, d: [0x90 | ch, n.midi, v], o: 1 }); evs.push({ t: t2, d: [0x80 | ch, n.midi, 0], o: 0 });

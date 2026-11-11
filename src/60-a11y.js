@@ -225,6 +225,7 @@ const A11Y_THEME_EN = { mubito: "MuBiTo orange", midnight: "Midnight blue", fore
 function a11yKeyHint(el) { const t = el.getAttribute("title") || el.getAttribute("aria-label") || ""; const m = /\(([^()]*)\)\s*$/.exec(t); return m ? ` (${m[1]})` : ""; }
 function a11yLabelEN(el, raw) {
   const d = el.dataset || {};
+  if (d.en) return d.en + a11yKeyHint(el);
   if (d.act) { const a = a11yActEN(d.act); if (a) return a + a11yKeyHint(el); }
   if (el.id && A11Y_ID_EN[el.id]) return A11Y_ID_EN[el.id] + a11yKeyHint(el);
   if (d.tab) return A11Y_TAB_EN[d.tab] || d.tab;

@@ -199,12 +199,7 @@ function renderInspector() {
     x += `<div class="btns" style="margin-top:8px"><button class="b pri" data-act="addinst">＋ เพิ่มเครื่องดนตรี</button><button class="b" data-act="transpose">Transpose…</button></div></div>`;
     x += `<div class="sec"><h5>การแสดงระดับเสียง</h5><label class="toggle"><input type="checkbox" id="pConcert" ${ui.concert ? "checked" : ""}> Concert pitch (แสดงเสียงจริง)</label><p class="note">ปิดไว้ = แสดงโน้ตตามที่ผู้เล่นอ่าน (เช่น Trumpet in B♭ สูงขึ้นหนึ่งเสียงเต็ม)</p></div>`;
   } else if (ui.rtab === "mix") {
-    x += `<div class="sec"><h5>มิกเซอร์</h5>`;
-    S.staves.forEach((st, i) => {
-      x += `<div class="mix"><div class="h"><span>${esc(st.name)}${st.group ? (st.gpos ? " (L.H.)" : " (R.H.)") : ""}</span><button class="ib" data-act="mute:${i}" aria-pressed="${st.mute}" title="Mute">M</button><button class="ib" data-act="solo:${i}" aria-pressed="${st.solo}" title="Solo">S</button></div>
-        <input type="range" min="0" max="100" value="${Math.round(st.vol * 100)}" data-vol="${i}" aria-label="ระดับเสียง ${esc(st.name)}"></div>`;
-    });
-    x += `</div>`;
+    x += renderMixer();
   } else if (ui.rtab === "page") {
     x += `<div class="sec"><h5>ข้อมูลเพลง</h5><div class="kv">
       <span>ชื่อเพลง</span><input class="inp" data-field="title" value="${esc(S.title)}">
