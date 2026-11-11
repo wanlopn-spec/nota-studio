@@ -4,6 +4,8 @@ const PW = 1000, PH = 1414, ML_ = 64, MR_ = 52, MT_ = 70, MB_ = 64;
 let SEL = "#d4731f"; const INK = "#1b1814";
 let LAY = { pages: [], mpos: {}, hits: [] };
 
+function perSys() { return (S && S.layout && S.layout.perSys) || 0; }
+function equalW() { return !(S && S.layout && S.layout.equalW === false); }
 function visibleStaves() {
   if (ui.part === "all") return S.staves.map((_, i) => i);
   const st = S.staves.find(s => s.id === ui.part); if (!st) { ui.part = "all"; return S.staves.map((_, i) => i); }
@@ -172,8 +174,9 @@ function render() {
     for (let m = 0; m < N; m++) {
       const W = PW - ML_ - MR_ - nameW(systems.length === 0);
       const need = mw[m] + (cur.length === 0 ? hFirst[m] : hMid[m]);
-      const forced = ui.perSys > 0 && cur.length >= ui.perSys;
-      if (cur.length && (used + need > W || forced)) { systems.push({ ms: cur }); cur = []; used = 0; }
+      const NPS = perSys();
+      const forced = NPS > 0 && cur.length >= NPS;
+      if (cur.length && ((!NPS && used + need > W) || forced)) { systems.push({ ms: cur }); cur = []; used = 0; }
       const need2 = mw[m] + (cur.length === 0 ? hFirst[m] : hMid[m]);
       cur.push(m); used += need2;
       if (S.meta[m].brk) { systems.push({ ms: cur }); cur = []; used = 0; }
@@ -196,7 +199,16 @@ function render() {
     const total = sys.w.reduce((a, b) => a + b, 0);
     const W = PW - ML_ - MR_ - sys.nameW;
     const last = k === systems.length - 1;
-    if (ui.view !== "cont" && (!last || total > W * .62) && total < W) {
+    const NPS = perSys();
+    if (ui.view !== "cont" && NPS) {
+      // fixed number of measures per line
+      const midBase = Math.min(...hMid);
+      const heads = sys.ms.map((m, i) => i === 0 ? hFirst[m] : Math.max(0, hMid[m] - midBase));
+      const H = heads.reduce((a, b) => a + b, 0);
+      const avail = Math.max(40 * sys.ms.length, (W - H) * (sys.ms.length < NPS && last ? sys.ms.length / NPS : 1));
+      if (equalW()) { const cell = (W - H) / NPS; sys.w = sys.ms.map((m, i) => (sys.ms.length < NPS && !last ? avail / sys.ms.length : cell) + heads[i]); }
+      else { const base = sys.ms.reduce((a, m) => a + mw[m], 0); sys.w = sys.ms.map((m, i) => avail * mw[m] / base + heads[i]); }
+    } else if (ui.view !== "cont" && (!last || total > W * .62) && total < W) {
       const extra = W - total, base = sys.ms.reduce((a, m) => a + mw[m], 0);
       sys.w = sys.w.map((w, i) => w + extra * (mw[sys.ms[i]] / base));
     }

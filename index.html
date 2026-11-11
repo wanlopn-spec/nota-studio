@@ -564,6 +564,8 @@ const PW = 1000, PH = 1414, ML_ = 64, MR_ = 52, MT_ = 70, MB_ = 64;
 let SEL = "#d4731f"; const INK = "#1b1814";
 let LAY = { pages: [], mpos: {}, hits: [] };
 
+function perSys() { return (S && S.layout && S.layout.perSys) || 0; }
+function equalW() { return !(S && S.layout && S.layout.equalW === false); }
 function visibleStaves() {
   if (ui.part === "all") return S.staves.map((_, i) => i);
   const st = S.staves.find(s => s.id === ui.part); if (!st) { ui.part = "all"; return S.staves.map((_, i) => i); }
@@ -732,8 +734,9 @@ function render() {
     for (let m = 0; m < N; m++) {
       const W = PW - ML_ - MR_ - nameW(systems.length === 0);
       const need = mw[m] + (cur.length === 0 ? hFirst[m] : hMid[m]);
-      const forced = ui.perSys > 0 && cur.length >= ui.perSys;
-      if (cur.length && (used + need > W || forced)) { systems.push({ ms: cur }); cur = []; used = 0; }
+      const NPS = perSys();
+      const forced = NPS > 0 && cur.length >= NPS;
+      if (cur.length && ((!NPS && used + need > W) || forced)) { systems.push({ ms: cur }); cur = []; used = 0; }
       const need2 = mw[m] + (cur.length === 0 ? hFirst[m] : hMid[m]);
       cur.push(m); used += need2;
       if (S.meta[m].brk) { systems.push({ ms: cur }); cur = []; used = 0; }
@@ -756,7 +759,16 @@ function render() {
     const total = sys.w.reduce((a, b) => a + b, 0);
     const W = PW - ML_ - MR_ - sys.nameW;
     const last = k === systems.length - 1;
-    if (ui.view !== "cont" && (!last || total > W * .62) && total < W) {
+    const NPS = perSys();
+    if (ui.view !== "cont" && NPS) {
+      // fixed number of measures per line
+      const midBase = Math.min(...hMid);
+      const heads = sys.ms.map((m, i) => i === 0 ? hFirst[m] : Math.max(0, hMid[m] - midBase));
+      const H = heads.reduce((a, b) => a + b, 0);
+      const avail = Math.max(40 * sys.ms.length, (W - H) * (sys.ms.length < NPS && last ? sys.ms.length / NPS : 1));
+      if (equalW()) { const cell = (W - H) / NPS; sys.w = sys.ms.map((m, i) => (sys.ms.length < NPS && !last ? avail / sys.ms.length : cell) + heads[i]); }
+      else { const base = sys.ms.reduce((a, m) => a + mw[m], 0); sys.w = sys.ms.map((m, i) => avail * mw[m] / base + heads[i]); }
+    } else if (ui.view !== "cont" && (!last || total > W * .62) && total < W) {
       const extra = W - total, base = sys.ms.reduce((a, m) => a + mw[m], 0);
       sys.w = sys.w.map((w, i) => w + extra * (mw[sys.ms[i]] / base));
     }
@@ -2050,10 +2062,14 @@ function renderRibbon() {
     x += grp("มุมมอง", rb("view:page", "▭", "หน้า", { pressed: ui.view === "page", cls: "u" }) + rb("view:cont", "⇥", "ต่อเนื่อง", { pressed: ui.view === "cont", cls: "u" }));
     x += grp("ซูม", rb("zoomout", "−", "ย่อ", { cls: "u", sm: true, key: "Ctrl+-" }) + `<div class="field" style="padding:0 6px;font-family:var(--f-mono)">${Math.round(ui.zoom * 100)}%</div>` + rb("zoomin", "+", "ขยาย", { cls: "u", sm: true, key: "Ctrl+=" }) + rb("zoomfit", "⤢", "พอดี", { cls: "u", sm: true }));
     x += grp("ระบบบรรทัด", rb("break", "↵", "ตัดบรรทัด", { cls: "u", key: "Enter" }) + rb("hideempty", "⊘", "ซ่อนว่าง", { pressed: ui.hideEmpty, cls: "u" }) + rb("names", "Ab", "ชื่อเครื่อง", { pressed: ui.names, cls: "u" }));
+    { const n = perSys(), std = [4, 5, 6, 8];
+      x += grp("ห้องต่อบรรทัด", rb("persys:0", "⇔", "อัตโนมัติ", { pressed: !n, cls: "u", sm: true }) + std.map(k => rb("persys:" + k, String(k), "ห้อง", { pressed: n === k, cls: "u", sm: true })).join("") +
+        rb("persys:custom", n && !std.includes(n) ? String(n) : "…", "อื่น ๆ", { pressed: !!(n && !std.includes(n)), cls: "u", sm: true }) +
+        rb("equalw", "▥", "กว้างเท่ากัน", { pressed: !!n && equalW(), cls: "u", sm: true, title: "ทุกห้องกว้างเท่ากัน เส้นกั้นห้องตรงกันทุกบรรทัด" }), "จัดเท่ากันทุกบรรทัด"); }
     x += grp("ระยะ", `<div style="display:flex;flex-direction:column;gap:4px;padding:2px 6px;min-width:200px">
       <label class="field">บรรทัด <input type="range" id="rgStaff" min="70" max="150" value="${ui.staffDist}"></label>
       <label class="field">โน้ต&nbsp;&nbsp; <input type="range" id="rgSpace" min="70" max="180" value="${Math.round(ui.spacing * 100)}"></label>
-      <label class="field">ห้อง/บรรทัด <select class="sel" id="selPerSys">${[0, 2, 3, 4, 5, 6, 8].map(n => `<option value="${n}" ${ui.perSys === n ? "selected" : ""}>${n ? n : "อัตโนมัติ"}</option>`).join("")}</select></label></div>`);
+</div>`);
     x += grp("Part", `<div style="padding:4px 6px"><select class="sel" id="selPart"><option value="all">Full score</option>${partOptions()}</select></div>`);
   } else if (ui.tab === "play") {
     x += grp("Transport", rb("play", playing ? "❚❚" : "▶", playing ? "หยุด" : "เล่น", { cls: "u", key: "Space" }) + rb("stop", "■", "หยุด", { cls: "u" }) + rb("loop", "⟲", "วนช่วง", { pressed: ui.loop, cls: "u" }) + rb("metro", "◭", "เมโทรนอม", { pressed: ui.metro, cls: "u" }));
@@ -2067,9 +2083,20 @@ function renderRibbon() {
   r.innerHTML = x;
   const rs = $("rgStaff"); if (rs) rs.oninput = () => { ui.staffDist = +rs.value; render(); };
   const sp = $("rgSpace"); if (sp) sp.oninput = () => { ui.spacing = sp.value / 100; render(); };
-  const ps = $("selPerSys"); if (ps) ps.onchange = () => { ui.perSys = +ps.value; render(); };
   const pt = $("selPart"); if (pt) { pt.value = ui.part; pt.onchange = () => { ui.part = pt.value; ui.sel = ui.range = ui.anchor = null; render(); refreshPanels(); }; }
   const t2 = $("tempoIn2"); if (t2) t2.onchange = () => setTempo(+t2.value);
+}
+function setPerSys(n) {
+  commit(() => { S.layout = { ...(S.layout || {}), perSys: n }; });
+  renderRibbon();
+  toast(n ? `จัดหน้า ${n} ห้องต่อบรรทัดทุกบรรทัด` : "จัดห้องต่อบรรทัดอัตโนมัติ");
+}
+function perSysDialog() {
+  openModal("จำนวนห้องต่อบรรทัด", `<div class="kv"><span>ห้องต่อบรรทัด</span><input class="inp num" id="psN" type="number" min="1" max="16" value="${perSys() || 4}"></div>
+    <label class="toggle"><input type="checkbox" id="psEq" ${equalW() ? "checked" : ""}> ให้ทุกห้องกว้างเท่ากัน (เส้นกั้นห้องตรงกันทุกบรรทัด)</label>
+    <p class="note">ใส่ 1–16 ห้อง · การตัดบรรทัดเอง (Enter) ยังใช้ได้ และจะเริ่มนับใหม่จากห้องถัดไป</p>`,
+    [{ label: "ยกเลิก" }, { label: "ใช้", pri: true, fn: () => { const n = Math.max(1, Math.min(16, Math.round(+$("psN").value || 4))); const eq = $("psEq").checked; commit(() => { S.layout = { ...(S.layout || {}), perSys: n, equalW: eq }; }); renderRibbon(); toast(`จัดหน้า ${n} ห้องต่อบรรทัดทุกบรรทัด`); } }],
+    () => setTimeout(() => { const i = $("psN"); i.focus(); i.select(); }, 30));
 }
 function measureButtons() {
   return rb("addm:end", "＋", "เพิ่มท้ายเพลง", { cls: "u", key: "Ctrl+B" }) + rb("addm:before", "⇤", "แทรกก่อน", { cls: "u", key: "Ins" }) + rb("addm:after", "⇥", "แทรกหลัง", { cls: "u", key: "Ctrl+Ins" }) + rb("deletem", "🗑", "ลบห้อง", { cls: "u", key: "Ctrl+Del" });
@@ -2203,6 +2230,7 @@ function renderInspector() {
       <span>Tempo text</span><input class="inp" data-field="tempoText" value="${esc(S.tempoText)}">
     </div></div>
     <div class="sec"><h5>จัดหน้า</h5><div class="kv">
+      <span>ห้อง/บรรทัด</span><select class="sel" id="pPerSys">${[0, 2, 3, 4, 5, 6, 8, 10, 12].map(n => `<option value="${n}" ${perSys() === n ? "selected" : ""}>${n ? n + " ห้อง" : "อัตโนมัติ"}</option>`).join("")}${perSys() && ![2, 3, 4, 5, 6, 8, 10, 12].includes(perSys()) ? `<option value="${perSys()}" selected>${perSys()} ห้อง</option>` : ""}</select>
       <span>เลขห้อง</span><select class="sel" id="pMnum"><option value="sys" ${ui.mnum === "sys" ? "selected" : ""}>ต้นบรรทัด</option><option value="all" ${ui.mnum === "all" ? "selected" : ""}>ทุกห้อง</option><option value="none" ${ui.mnum === "none" ? "selected" : ""}>ไม่แสดง</option></select>
       <span>ระยะบรรทัด</span><input type="range" id="pStaff" min="70" max="150" value="${ui.staffDist}">
       <span>ระยะระบบ</span><input type="range" id="pGap" min="10" max="90" value="${ui.sysGap}">
@@ -2232,6 +2260,7 @@ function bindInspector() {
   on("pBrk", "change", ev => commit(() => { S.meta[m].brk = ev.target.checked; }));
   on("pConcert", "change", ev => { ui.concert = ev.target.checked; render(); refreshPanels(); renderRibbon(); });
   on("pMnum", "change", ev => { ui.mnum = ev.target.value; render(); });
+  on("pPerSys", "change", ev => setPerSys(+ev.target.value));
   on("pStaff", "input", ev => { ui.staffDist = +ev.target.value; render(); });
   on("pGap", "input", ev => { ui.sysGap = +ev.target.value; render(); });
   on("pHide", "change", ev => { ui.hideEmpty = ev.target.checked; render(); renderRibbon(); });
@@ -2389,7 +2418,7 @@ const COMMANDS = [
   ["Tempo marking", "Alt+T", "tempo"], ["Rehearsal mark", "Ctrl+M", "reh"], ["Lyrics เนื้อร้อง", "Ctrl+L", "lyric"], ["Chord symbol คอร์ด", "Ctrl+Shift+K", "chordsym"], ["Staff text", "Ctrl+T", "stafftext"], ["System text", "", "systext"],
   ["Transpose ทรานสโพส", "", "transpose"], ["Concert pitch toggle", "", "concert"], ["Key signature บันไดเสียง", "", "pick:key"], ["Time signature อัตราจังหวะ", "", "pick:time"],
   ["Add instrument เพิ่มเครื่องดนตรี", "I", "addinst"], ["Add measure at end เพิ่มห้องท้ายเพลง", "Ctrl+B", "addm:end"], ["Insert measure before แทรกห้องก่อน", "Ins", "addm:before"], ["Insert measure after แทรกห้องหลัง", "Ctrl+Ins", "addm:after"], ["Add several measures เพิ่มหลายห้อง", "", "appendm"], ["Insert several measures แทรกหลายห้อง", "", "insertm"], ["Delete measures ลบห้อง", "Ctrl+Del", "deletem"],
-  ["System break ตัดบรรทัด", "Enter", "break"], ["Page view", "", "view:page"], ["Continuous view", "", "view:cont"], ["Zoom in", "Ctrl+=", "zoomin"], ["Zoom out", "Ctrl+-", "zoomout"], ["Hide empty staves", "", "hideempty"],
+  ["System break ตัดบรรทัด", "Enter", "break"], ["4 measures per line ห้องต่อบรรทัด 4", "", "persys:4"], ["5 measures per line ห้องต่อบรรทัด 5", "", "persys:5"], ["6 measures per line ห้องต่อบรรทัด 6", "", "persys:6"], ["8 measures per line ห้องต่อบรรทัด 8", "", "persys:8"], ["Measures per line (custom) ห้องต่อบรรทัด อื่นๆ", "", "persys:custom"], ["Auto measures per line ห้องต่อบรรทัด อัตโนมัติ", "", "persys:0"], ["Equal measure widths กว้างเท่ากัน", "", "equalw"], ["Page view", "", "view:page"], ["Continuous view", "", "view:cont"], ["Zoom in", "Ctrl+=", "zoomin"], ["Zoom out", "Ctrl+-", "zoomout"], ["Hide empty staves", "", "hideempty"],
   ["Play / Stop เล่น", "Space", "play"], ["Swing eighths", "", "swing"], ["Metronome", "", "metro"], ["Loop selection", "", "loop"], ["Mixer มิกเซอร์", "", "rtab:mix"],
   ["Export all (.zip)", "", "exp:zip"], ["Export MusicXML", "", "exp:musicxml"], ["Export MIDI", "", "exp:midi"], ["Export SVG", "", "exp:svg"], ["Export PNG", "", "exp:png"], ["Save project (.json)", "Ctrl+S", "exp:json"], ["Copy MusicXML", "", "copyxml"],
   ["Open / import file เปิดไฟล์", "Ctrl+O", "open"], ["New score สกอร์ใหม่", "Ctrl+N", "new"], ["Load sample score เพลงตัวอย่าง", "", "sample"], ["Undo", "Ctrl+Z", "undo"], ["Redo", "Ctrl+Shift+Z", "redo"],
@@ -2426,6 +2455,8 @@ function doAction(a) {
     case "input": return setInput(!ui.input);
     case "select": return setInput(false);
     case "theme": return themeDialog();
+    case "persys": return arg === "custom" ? perSysDialog() : setPerSys(+arg);
+    case "equalw": if (!perSys()) { toast("เลือกจำนวนห้องต่อบรรทัดก่อน (4, 5, 6, 8 หรืออื่น ๆ)"); return; } commit(() => { S.layout = { ...(S.layout || {}), equalW: !equalW() }; }); renderRibbon(); return;
     case "dur": return setDuration(arg);
     case "voice": return chooseVoice(+arg);
     case "dot": return toggleDot();
