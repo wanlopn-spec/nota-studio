@@ -188,6 +188,11 @@ input[type=range]{accent-color:var(--accent);width:100%}
 .pop small{color:var(--muted);font-size:10.5px}
 .toast{position:fixed;left:50%;bottom:max(70px,calc(env(safe-area-inset-bottom,0px) + 70px));transform:translateX(-50%);background:var(--raise);border:1px solid var(--line-2);padding:8px 14px;border-radius:8px;z-index:60;font-size:12.5px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .mobtoggle{display:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
+.skiplink{position:fixed;z-index:200;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));transform:translateY(-300%);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font-weight:700}
+.skiplink:focus{transform:none}
+#btnA11y[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.canvas:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
 .presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
 .preset{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px}
 .preset[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
@@ -218,6 +223,8 @@ input[type=range]{accent-color:var(--accent);width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
+<button class="skiplink" data-act="a11y">เปิดเสียงนำทางสำหรับผู้พิการทางสายตา (กด F2)</button>
+<div id="a11yLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <div id="app">
   <header class="top">
     <div class="brand"><div class="logo" aria-hidden="true">𝄞</div><b>NOTA STUDIO <span style="color:var(--accent)">(GW)</span></b></div>
@@ -228,6 +235,7 @@ input[type=range]{accent-color:var(--accent);width:100%}
       <button class="tbtn mobtoggle" id="openLeft"><i>☰</i><small>พาเลต</small></button>
       <button class="tbtn" id="btnNew"><i>＋</i><small>ใหม่</small></button>
       <button class="tbtn" id="btnOpen"><i>⇪</i><small>เปิด</small></button>
+      <button class="tbtn" id="btnA11y" data-act="a11y" aria-pressed="false" title="เสียงนำทางสำหรับผู้พิการทางสายตา (F2)"><i>🔊</i><small>เสียงนำทาง</small></button>
       <button class="tbtn" id="btnTheme" data-act="theme" title="ปรับโทนสี"><i>🎨</i><small>ธีม</small></button>
       <button class="tbtn" id="btnUndo"><i>↶</i><small>เลิกทำ</small></button>
       <button class="tbtn" id="btnRedo"><i>↷</i><small>ทำซ้ำ</small></button>
@@ -246,7 +254,7 @@ input[type=range]{accent-color:var(--accent);width:100%}
     </aside>
     <section class="center">
       <div class="strip" id="strip"></div>
-      <div class="canvas" id="canvas"><div class="pages" id="pages"></div></div>
+      <div class="canvas" id="canvas" tabindex="0" role="application" aria-label="กระดาษโน้ต ใช้ลูกศรซ้ายขวาเลื่อนทีละโน้ต"><div class="pages" id="pages"></div></div>
     </section>
     <aside class="side right" id="right">
       <div class="sidehead" id="rtabs"></div>

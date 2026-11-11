@@ -8,7 +8,7 @@ const ACTIONS = {};
 let VUI = { 1: "#e9a15b", 2: "#5cc08a", 3: "#79a8f0", 4: "#c690ea" };
 function act(name, fn) { ACTIONS[name] = fn; }
 function rb(action, glyph, label, opts = {}) {
-  return `<button class="rb${opts.sm ? " sm" : ""}" data-act="${action}" ${opts.pressed != null ? `aria-pressed="${!!opts.pressed}"` : ""} title="${opts.title || label}${opts.key ? " (" + opts.key + ")" : ""}"><i class="${opts.cls || ""}">${glyph}</i>${label}</button>`;
+  return `<button class="rb${opts.sm ? " sm" : ""}" data-act="${action}" ${opts.pressed != null ? `aria-pressed="${!!opts.pressed}"` : ""} title="${opts.title || label}${opts.key ? " (" + opts.key + ")" : ""}" aria-label="${opts.title || label || ""}${opts.key ? " (" + opts.key + ")" : ""}"><i class="${opts.cls || ""}">${glyph}</i>${label}</button>`;
 }
 function grp(label, inner, right = "") { return `<div class="grp"><label><span>${label}</span><span>${right}</span></label><div class="row">${inner}</div></div>`; }
 
@@ -26,10 +26,10 @@ function renderRibbon() {
       rb("dot", "𝅭", "จุด", { pressed: !!ui.dots, key: ".", sm: true }) + rb("tup", "³", "Triplet", { pressed: ui.tup, key: "Ctrl+3", sm: true, cls: "u" }), "1–7 · .");
     x += grp("ตัวหยุด & เครื่องหมาย", rb("rest", "𝄽", "หยุด", { key: "0", sm: true }) + rb("acc:sharp", "♯", "ชาร์ป", { sm: true, key: "↑" }) + rb("acc:flat", "♭", "แฟลต", { sm: true, key: "↓" }) + rb("acc:natural", "♮", "เนเชอรัล", { sm: true }) + rb("acc:dsharp", "𝄪", "ดับเบิล♯", { sm: true }) + rb("acc:dflat", "𝄫", "ดับเบิล♭", { sm: true }) + rb("tie", "‿", "Tie", { sm: true, key: "T" }));
     x += grp("ระดับเสียง", rb("up", "▲", "+½", { sm: true, cls: "u", key: "↑" }) + rb("down", "▼", "−½", { sm: true, cls: "u", key: "↓" }) + rb("octup", "⇑", "ออกเทฟ", { sm: true, cls: "u", key: "Ctrl+↑" }) + rb("octdown", "⇓", "ออกเทฟ", { sm: true, cls: "u", key: "Ctrl+↓" }));
-    x += grp("ใส่ด้วยตัวอักษร", LET.split("").map(L => rb("letter:" + L, L, "", { sm: true, cls: "u", key: L })).join(""), "Shift = คอร์ด");
+    x += grp("ใส่ด้วยตัวอักษร", LET.split("").map(L => rb("letter:" + L, L, "", { sm: true, cls: "u", key: L, title: "ใส่โน้ต " + L })).join(""), "Shift = คอร์ด");
   } else if (ui.tab === "notations") {
     x += grp("Articulation", Object.entries(ARTS).map(([k, a]) => rb("art:" + k, a.g, a.n, { sm: true })).join(""));
-    x += grp("Dynamics", DYNS.slice(0, 8).map(d => rb("dyn:" + d, d, "", { sm: true, cls: "t" })).join("") + DYNS.slice(8).map(d => rb("dyn:" + d, d, "", { sm: true, cls: "t" })).join(""));
+    x += grp("Dynamics", DYNS.slice(0, 8).map(d => rb("dyn:" + d, d, "", { sm: true, cls: "t", title: "ไดนามิก " + d })).join("") + DYNS.slice(8).map(d => rb("dyn:" + d, d, "", { sm: true, cls: "t", title: "ไดนามิก " + d })).join(""));
     x += grp("เส้น", rb("slur", "⌒", "Slur", { key: "S" }) + rb("cresc", "𝆒", "Cresc.", { key: "<" }) + rb("dim", "𝆓", "Dim.", { key: ">" }));
     x += grp("เส้นกั้นห้อง & ย้อน", rb("bar:double", "𝄁", "คู่") + rb("bar:end", "𝄂", "จบ") + rb("bar:repBeg", "𝄆", "เริ่มย้อน") + rb("bar:repEnd", "𝄇", "จบย้อน") + rb("bar:single", "𝄀", "ปกติ"));
   } else if (ui.tab === "text") {
@@ -138,7 +138,7 @@ function renderPalettes() {
     const items = p.items.filter(it => !q || (it[2] + " " + it[1] + " " + it[0] + " " + p.t).toLowerCase().includes(q));
     if (!items.length) return "";
     const open = q || palOpen[k] !== false;
-    return `<div class="pal"><h4 data-pal="${k}"><span>${open ? "▾" : "▸"} ${p.t}</span><em>${items.length}</em></h4>${open ? `<div class="cells">${items.map(([a, g, l, c]) => `<button class="cell ${c || ""}" data-act="${a}" title="${esc(l || g)}">${g}${l && c !== "t" ? `<small>${esc(l)}</small>` : ""}</button>`).join("")}</div>` : ""}</div>`;
+    return `<div class="pal"><h4 data-pal="${k}"><span>${open ? "▾" : "▸"} ${p.t}</span><em>${items.length}</em></h4>${open ? `<div class="cells">${items.map(([a, g, l, c]) => `<button class="cell ${c || ""}" data-act="${a}" title="${esc(l || g)}" aria-label="${esc(l || g)}">${g}${l && c !== "t" ? `<small>${esc(l)}</small>` : ""}</button>`).join("")}</div>` : ""}</div>`;
   }).join("") || `<p class="note">ไม่พบ “${esc(q)}”</p>`;
 }
 

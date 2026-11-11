@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
   cat src/00-head.html
   echo '<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.3/build/cjs/vexflow.js"></script>'
   echo '<script>'
-  cat src/10-engine.js src/20-render.js src/30-edit.js src/40-io.js src/45-omr.js src/50-ui.js
+  cat src/10-engine.js src/20-render.js src/30-edit.js src/40-io.js src/45-omr.js src/50-ui.js src/60-a11y.js
   echo '</script>'
   echo '</body></html>'
 } > index.html
