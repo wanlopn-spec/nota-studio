@@ -93,7 +93,7 @@ const A11Y_EXACT = {
   "เลือกโน้ตหรือห้องก่อน": "Select a note or measure first", "เลือกโน้ตก่อน": "Select a note first", "เลือกห้องก่อน": "Select a measure first", "เลือกห้องก่อน แล้วจึงแทรก": "Select a measure first, then insert",
   "ไม่มีอะไรให้เลิกทำ": "Nothing to undo", "ไม่มีอะไรให้ทำซ้ำ": "Nothing to redo", "คลิปบอร์ดว่าง": "Clipboard is empty", "เลือกตำแหน่งที่จะวางก่อน": "Choose where to paste first",
   "ต้องมีอย่างน้อย 1 เครื่องดนตรี": "The score needs at least one instrument", "ต้องเหลืออย่างน้อย 1 ห้อง": "The score needs at least one measure", "จัดห้องต่อบรรทัดอัตโนมัติ": "Automatic measures per line",
-  "บันทึกธีมแล้ว": "Theme saved", "กลับไปใช้ธีม MuBiTo ส้ม": "Back to the MuBiTo orange theme", "ยกเลิกการบันทึก": "Save cancelled", "ปิดเสียงนำทางแล้ว": "Spoken guide off", "Swing 8ths: เปิด": "Swing eighths on", "Swing 8ths: ปิด": "Swing eighths off",
+  "บันทึกธีมแล้ว": "Theme saved", "กลับไปใช้ธีม ม่วง-ขาว": "Back to the purple and white theme", "ยกเลิกการบันทึก": "Save cancelled", "ปิดเสียงนำทางแล้ว": "Spoken guide off", "Swing 8ths: เปิด": "Swing eighths on", "Swing 8ths: ปิด": "Swing eighths off",
   "หยุดการอ่านโน้ตแล้ว": "Stopped reading the sheet music", "เลือกตำแหน่งก่อน หรือกด N": "Choose a position first, or press N", "เลือกตำแหน่งก่อน": "Choose a position first",
   "เลือกช่วงโน้ต (Shift+คลิก หรือ Shift+→) ก่อน": "Select a range of notes first, with Shift click or Shift right arrow", "พื้นที่ในห้องไม่พอสำหรับ triplet": "Not enough room in this measure for a triplet",
   "กด F2 เพื่อเปิดเสียงนำทางก่อน": "Press F2 to turn on the spoken guide first", "เลือกบรรทัดก่อน": "Select a staff first", "กุญแจเครื่องกระทบใช้กับ Drum Set เท่านั้น": "The percussion clef is only for the drum set",
@@ -221,7 +221,7 @@ const A11Y_ID_EN = {
 const A11Y_TAB_EN = { write: "Write", notations: "Notations", text: "Text", score: "Instruments and measures", layout: "Layout", play: "Play", export: "Export" };
 const A11Y_RTAB_EN = { props: "Properties", inst: "Instruments", mix: "Mixer", page: "Page" };
 const A11Y_PAL_EN = ["Clefs", "Key signatures", "Time signatures", "Accidentals", "Articulations", "Dynamics", "Lines", "Barlines and repeats", "Text and tempo", "Measures"];
-const A11Y_THEME_EN = { mubito: "MuBiTo orange", midnight: "Midnight blue", forest: "Forest green", rose: "Rose pink", violet: "Violet", graphite: "Graphite gray", contrast: "High contrast", daylight: "Daylight", ocean: "Ocean blue", mint: "Mint" };
+const A11Y_THEME_EN = { purple: "Purple and white", mubito: "MuBiTo orange", midnight: "Midnight blue", forest: "Forest green", rose: "Rose pink", violet: "Violet", graphite: "Graphite gray", contrast: "High contrast", daylight: "Daylight", ocean: "Ocean blue", mint: "Mint" };
 function a11yKeyHint(el) { const t = el.getAttribute("title") || el.getAttribute("aria-label") || ""; const m = /\(([^()]*)\)\s*$/.exec(t); return m ? ` (${m[1]})` : ""; }
 function a11yLabelEN(el, raw) {
   const d = el.dataset || {};

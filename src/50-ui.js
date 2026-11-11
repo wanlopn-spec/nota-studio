@@ -602,6 +602,7 @@ function onKey(e) {
 
 /* ---------- theme ---------- */
 const THEMES = [
+  { k: "purple", n: "ม่วง-ขาว", mode: "light", accent: "#7c3aed", base: "#f6f3fd", paper: "#ffffff" },
   { k: "mubito", n: "MuBiTo ส้ม", mode: "dark", accent: "#e9a15b", base: "#151311", paper: "#f6f0e2" },
   { k: "midnight", n: "Midnight น้ำเงิน", mode: "dark", accent: "#6ea8ff", base: "#10131b", paper: "#f4f5f7" },
   { k: "forest", n: "Forest เขียว", mode: "dark", accent: "#6cc58f", base: "#111613", paper: "#f3f1e7" },
@@ -642,10 +643,10 @@ function applyTheme(t) {
   r.setProperty("color-scheme", dark ? "dark" : "light");
   // selection colour on the white-ish paper: a deeper version of the accent
   SEL = hsl(ah, Math.max(as, 55), Math.min(46, al)); VCOL[1] = SEL;
-  VUI = { ...VUI, 1: t.accent };
+  VUI = dark ? { 1: t.accent, 2: "#5cc08a", 3: "#79a8f0", 4: "#c690ea" } : { 1: t.accent, 2: "#1f8a55", 3: "#2a64b8", 4: "#b0418a" };
 }
-function loadTheme() { try { const o = JSON.parse(localStorage.getItem("nota-theme") || "null"); if (o && o.accent && o.base) { applyTheme(o); return; } } catch (e) { } applyTheme(THEMES[0]); }
-function saveTheme() { try { localStorage.setItem("nota-theme", JSON.stringify(THEME)); } catch (e) { } }
+function loadTheme() { try { const o = JSON.parse(localStorage.getItem("nota-theme-v2") || "null"); if (o && o.accent && o.base) { applyTheme(o); return; } } catch (e) { } applyTheme(THEMES[0]); }
+function saveTheme() { try { localStorage.setItem("nota-theme-v2", JSON.stringify(THEME)); } catch (e) { } }
 function refreshAll() { renderTabs(); renderRibbon(); render(); refreshPanels(); }
 function themeDialog() {
   const before = { ...THEME };
@@ -659,7 +660,7 @@ function themeDialog() {
       <label class="colorrow"><span>สีกระดาษโน้ต</span><input type="color" id="thPaper" value="${THEME.paper}"><code>${THEME.paper}</code></label>
     </div><p class="note">เปลี่ยนแล้วเห็นผลทันที และจำไว้ในเบราว์เซอร์นี้ · สีโน้ตบนกระดาษยังเป็นสีดำเพื่อให้อ่านง่าย</p></div>`;
   openModal("ปรับโทนสีแอป", `<div id="thBody" style="display:flex;flex-direction:column;gap:14px">${body()}</div>`,
-    [{ label: "คืนค่าเริ่มต้น", fn: () => { applyTheme(THEMES[0]); saveTheme(); refreshAll(); toast("กลับไปใช้ธีม MuBiTo ส้ม"); } },
+    [{ label: "คืนค่าเริ่มต้น", fn: () => { applyTheme(THEMES[0]); saveTheme(); refreshAll(); toast("กลับไปใช้ธีม ม่วง-ขาว"); } },
      { label: "ยกเลิก", fn: () => { applyTheme(before); saveTheme(); refreshAll(); } },
      { label: "เสร็จ", pri: true, fn: () => { saveTheme(); toast("บันทึกธีมแล้ว"); } }],
     ov => {
