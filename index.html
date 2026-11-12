@@ -204,6 +204,11 @@ input[type=range]{accent-color:var(--accent);width:100%}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
 .skiplink{position:fixed;z-index:200;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));transform:translateY(-300%);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font-weight:700}
 .skiplink:focus{transform:none}
+.uilang{display:inline-flex;align-items:center;gap:3px;align-self:center;border:1px solid var(--line-2);border-radius:7px;padding:0 4px 0 7px;margin:0 4px;flex:none;color:var(--muted)}
+.uilang i{font-style:normal;font-size:13px}
+.uilang select{background:transparent;border:0;color:var(--fg);font:600 12px var(--f-ui);padding:5px 2px;max-width:120px;cursor:pointer}
+.uilang select option{color:#111;background:#fff}
+.uilang:hover{background:var(--panel-2)}
 .langseg{display:inline-flex;align-self:center;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;margin:0 4px;flex:none}
 .langseg button{background:none;border:0;padding:5px 9px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .langseg button+button{border-left:1px solid var(--line-2)}
@@ -3783,5 +3788,590 @@ function a11yInit() {
 }
 function a11yGreet() { a11yGreeted = true; setTimeout(() => a11ySpeak(lg => LG(lg, "เสียงนำทางพร้อมใช้งาน. กด Shift F2 เพื่อฟังตำแหน่ง, F2 เพื่อปิด", "Spoken guide ready. Press Shift F2 to hear your position, F2 to turn it off"), "queue"), 150); }
 if (window.Vex) a11yInit(); else window.addEventListener("load", () => { if (window.Vex) a11yInit(); });
+/* ================= UI translations =================
+   Each row: Thai source text, then en, zh, ja, ko, es, fr, de, pt, ru, vi, id.
+   A row with only English falls back to English in every other language. */
+const I18N_LANGS = [
+  ["th", "ไทย"], ["en", "English"], ["zh", "中文"], ["ja", "日本語"], ["ko", "한국어"], ["es", "Español"], ["fr", "Français"],
+  ["de", "Deutsch"], ["pt", "Português"], ["ru", "Русский"], ["vi", "Tiếng Việt"], ["id", "Bahasa Indonesia"]
+];
+const I18N_ROWS = [
+// top bar
+["คู่","Double","双线","複縦線","겹세로줄","Doble","Double","Doppel","Dupla","Двойная","Kép","Ganda"],
+["จบ","Final","终止线","終止線","끝","Final","Finale","Schluss","Final","Конечная","Kết","Akhir"],
+["ล","L","词","歌","가","L","P","T","L","Т","L","L"],
+["ไทย","TH","泰","タイ","태","TH","TH","TH","TH","TH","Thái","TH"],
+["เทมเพลต","Templates","模板","テンプレート","템플릿","Plantillas","Modèles","Vorlagen","Modelos","Шаблоны","Mẫu","Templat"],
+["ปกติ","Normal","正常","通常","보통","Normal","Normal","Normal","Normal","Обычный","Bình thường","Normal"],
+["เพลงตัวอย่าง","Sample score","示例乐谱","サンプル楽譜","샘플 악보","Partitura de ejemplo","Partition d’exemple","Beispielpartitur","Partitura de exemplo","Пример партитуры","Bản mẫu","Partitur contoh"],
+["เลือกทั้งหมด","Select all","全选","すべて選択","모두 선택","Seleccionar todo","Tout sélectionner","Alles auswählen","Selecionar tudo","Выделить всё","Chọn tất cả","Pilih semua"],
+["ดาวน์โหลด","Download","下载","ダウンロード","다운로드","Descargar","Télécharger","Herunterladen","Baixar","Скачать","Tải xuống","Unduh"],
+["นำเข้าเสร็จแล้ว","Import finished","导入完成","読み込み完了","가져오기 완료","Importación terminada","Importation terminée","Import abgeschlossen","Importação concluída","Импорт завершён","Đã nhập xong","Impor selesai"],
+["▶ ฟังเลย","▶ Listen now","▶ 立即试听","▶ 今すぐ再生","▶ 지금 듣기","▶ Escuchar","▶ Écouter","▶ Jetzt anhören","▶ Ouvir agora","▶ Слушать","▶ Nghe ngay","▶ Dengar sekarang"],
+["กำลังเตรียมไฟล์…","Preparing file…","正在准备文件…","ファイル準備中…","파일 준비 중…","Preparando archivo…","Préparation du fichier…","Datei wird vorbereitet…","Preparando arquivo…","Подготовка файла…","Đang chuẩn bị tệp…","Menyiapkan file…"],
+["กำลังสร้างสกอร์…","Building score…","正在生成乐谱…","楽譜を作成中…","악보 생성 중…","Creando partitura…","Création de la partition…","Partitur wird erstellt…","Criando partitura…","Создание партитуры…","Đang tạo bản nhạc…","Membuat partitur…"],
+["ต้องเหลืออย่างน้อย 1 ห้อง","At least 1 measure must remain","至少保留 1 个小节","少なくとも1小節が必要です","최소 1마디가 필요합니다","Debe quedar al menos 1 compás","Il faut au moins 1 mesure","Mindestens 1 Takt muss bleiben","Deve restar pelo menos 1 compasso","Должен остаться хотя бы 1 такт","Phải còn ít nhất 1 ô","Minimal harus ada 1 birama"],
+["ต้องมีอย่างน้อย 1 เครื่องดนตรี","At least 1 instrument is required","至少需要 1 件乐器","楽器が少なくとも1つ必要です","악기가 최소 1개 필요합니다","Se necesita al menos 1 instrumento","Il faut au moins 1 instrument","Mindestens 1 Instrument nötig","É necessário pelo menos 1 instrumento","Нужен хотя бы 1 инструмент","Cần ít nhất 1 nhạc cụ","Minimal 1 instrumen"],
+["เลือกบรรทัดก่อน","Select a staff first","请先选择谱表","先に段を選択","먼저 보표를 선택하세요","Selecciona un pentagrama","Sélectionnez une portée","Zuerst ein System wählen","Selecione uma pauta","Сначала выберите стан","Hãy chọn khuông trước","Pilih paranada dulu"],
+["เลือกตำแหน่งก่อน","Select a position first","请先选择位置","先に位置を選択","먼저 위치를 선택하세요","Selecciona una posición","Sélectionnez une position","Zuerst eine Position wählen","Selecione uma posição","Сначала выберите позицию","Hãy chọn vị trí trước","Pilih posisi dulu"],
+["เลือกห้องก่อน แล้วจึงแทรก","Select a measure first, then insert","请先选择小节再插入","小節を選んでから挿入","마디를 선택한 후 삽입하세요","Selecciona un compás y luego inserta","Sélectionnez une mesure puis insérez","Erst Takt wählen, dann einfügen","Selecione um compasso e depois insira","Выберите такт, затем вставьте","Chọn ô rồi chèn","Pilih birama lalu sisipkan"],
+["Swing 8ths: เปิด","Swing 8ths: on","摇摆八分音符：开","スウィング8分: オン","스윙 8분: 켜짐","Swing de corcheas: sí","Swing croches : activé","Swing-Achtel: an","Swing de colcheias: ligado","Свинг восьмых: вкл.","Swing móc đơn: bật","Swing 1/8: aktif"],
+["Swing 8ths: ปิด","Swing 8ths: off","摇摆八分音符：关","スウィング8分: オフ","스윙 8분: 꺼짐","Swing de corcheas: no","Swing croches : désactivé","Swing-Achtel: aus","Swing de colcheias: desligado","Свинг восьмых: выкл.","Swing móc đơn: tắt","Swing 1/8: mati"],
+["จะเปลี่ยนอะไร? พิมพ์ \"slur\", \"tempo\", \"transpose\"…","What do you want to change? Type \"slur\", \"tempo\", \"transpose\"…","想修改什么？输入 \"slur\"、\"tempo\"、\"transpose\"…","何を変更しますか？ \"slur\"、\"tempo\"、\"transpose\"…","무엇을 바꿀까요? \"slur\", \"tempo\", \"transpose\"…","¿Qué quieres cambiar? Escribe \"slur\", \"tempo\", \"transpose\"…","Que voulez-vous changer ? \"slur\", \"tempo\", \"transpose\"…","Was ändern? Tippe \"slur\", \"tempo\", \"transpose\"…","O que alterar? Digite \"slur\", \"tempo\", \"transpose\"…","Что изменить? \"slur\", \"tempo\", \"transpose\"…","Muốn đổi gì? Gõ \"slur\", \"tempo\", \"transpose\"…","Ubah apa? Ketik \"slur\", \"tempo\", \"transpose\"…"],
+["บันทึกแล้ว","Saved","已保存","保存済み","저장됨","Guardado","Enregistré","Gespeichert","Salvo","Сохранено","Đã lưu","Tersimpan"],
+["บันทึกในเบราว์เซอร์นี้แล้ว","Saved in this browser","已保存在此浏览器","このブラウザに保存済み","이 브라우저에 저장됨","Guardado en este navegador","Enregistré dans ce navigateur","In diesem Browser gespeichert","Salvo neste navegador","Сохранено в этом браузере","Đã lưu trong trình duyệt này","Tersimpan di browser ini"],
+["กำลังบันทึก…","Saving…","正在保存…","保存中…","저장 중…","Guardando…","Enregistrement…","Speichern…","Salvando…","Сохранение…","Đang lưu…","Menyimpan…"],
+["ยังไม่ได้บันทึกลงเครื่อง — กด 💾 หรือ Ctrl+S","Not saved to computer — press 💾 or Ctrl+S","尚未保存到电脑 — 按 💾 或 Ctrl+S","PCに未保存 — 💾 または Ctrl+S","컴퓨터에 저장 안 됨 — 💾 또는 Ctrl+S","No guardado en el equipo — pulsa 💾 o Ctrl+S","Non enregistré sur l’ordinateur — 💾 ou Ctrl+S","Nicht auf dem Computer gespeichert — 💾 oder Strg+S","Não salvo no computador — 💾 ou Ctrl+S","Не сохранено на компьютер — 💾 или Ctrl+S","Chưa lưu vào máy — nhấn 💾 hoặc Ctrl+S","Belum disimpan ke komputer — tekan 💾 atau Ctrl+S"],
+["บันทึกลงเครื่องแล้ว","Saved to computer","已保存到电脑","PCに保存済み","컴퓨터에 저장됨","Guardado en el equipo","Enregistré sur l’ordinateur","Auf dem Computer gespeichert","Salvo no computador","Сохранено на компьютер","Đã lưu vào máy","Tersimpan di komputer"],
+["จะเปลี่ยนอะไร? พิมพ์","What do you want to change? Type","想修改什么？输入","何を変更しますか？入力:","무엇을 바꿀까요? 입력:","¿Qué quieres cambiar? Escribe","Que voulez-vous changer ? Tapez","Was möchtest du ändern? Tippe","O que deseja alterar? Digite","Что изменить? Введите","Bạn muốn thay đổi gì? Gõ","Apa yang ingin diubah? Ketik"],
+["จะเปลี่ยนอะไร? พิมพ์ “notehead”, “slur”, “tempo”…","What do you want to change? Type “notehead”, “slur”, “tempo”…","想修改什么？输入 “notehead”、“slur”、“tempo”…","何を変更しますか？ “notehead”、“slur”、“tempo”…","무엇을 바꿀까요? “notehead”, “slur”, “tempo”…","¿Qué quieres cambiar? Escribe “notehead”, “slur”, “tempo”…","Que voulez-vous changer ? “notehead”, “slur”, “tempo”…","Was ändern? Tippe „notehead“, „slur“, „tempo“…","O que alterar? Digite “notehead”, “slur”, “tempo”…","Что изменить? «notehead», «slur», «tempo»…","Muốn đổi gì? Gõ “notehead”, “slur”, “tempo”…","Ubah apa? Ketik “notehead”, “slur”, “tempo”…"],
+["ค้นหาคำสั่ง","Search commands","搜索命令","コマンド検索","명령 검색","Buscar comandos","Rechercher une commande","Befehle suchen","Buscar comandos","Поиск команд","Tìm lệnh","Cari perintah"],
+["ค้นหา","Search","搜索","検索","검색","Buscar","Rechercher","Suchen","Buscar","Поиск","Tìm","Cari"],
+["พาเลต","Palettes","面板","パレット","팔레트","Paletas","Palettes","Paletten","Paletas","Палитры","Bảng ký hiệu","Palet"],
+["ใหม่","New","新建","新規","새로 만들기","Nuevo","Nouveau","Neu","Novo","Новый","Mới","Baru"],
+["เปิดไฟล์","Open file","打开文件","ファイルを開く","파일 열기","Abrir archivo","Ouvrir un fichier","Datei öffnen","Abrir arquivo","Открыть файл","Mở tệp","Buka file"],
+["เปิด","Open","打开","開く","열기","Abrir","Ouvrir","Öffnen","Abrir","Открыть","Mở","Buka"],
+["บันทึกไฟล์ลงเครื่อง","Save file to computer","保存文件到电脑","ファイルをPCに保存","파일을 컴퓨터에 저장","Guardar archivo en el equipo","Enregistrer sur l’ordinateur","Datei auf dem Computer speichern","Salvar arquivo no computador","Сохранить файл на компьютер","Lưu tệp vào máy","Simpan file ke komputer"],
+["บันทึก","Save","保存","保存","저장","Guardar","Enregistrer","Speichern","Salvar","Сохранить","Lưu","Simpan"],
+["เสียงนำทางสำหรับผู้พิการทางสายตา","Spoken guide for blind users","视障语音向导","視覚障害者向け音声ガイド","시각장애인용 음성 안내","Guía hablada para personas ciegas","Guide vocal pour personnes aveugles","Sprachführung für blinde Menschen","Guia falado para pessoas cegas","Голосовой гид для незрячих","Hướng dẫn giọng nói cho người khiếm thị","Panduan suara untuk tunanetra"],
+["เปิดเสียงนำทางสำหรับผู้พิการทางสายตา (กด F2)","Turn on the spoken guide for blind users (press F2)","开启视障语音向导（按 F2）","視覚障害者向け音声ガイドをオン（F2）","시각장애인용 음성 안내 켜기 (F2)","Activar la guía hablada (pulsa F2)","Activer le guide vocal (touche F2)","Sprachführung einschalten (F2)","Ativar o guia falado (F2)","Включить голосовой гид (F2)","Bật hướng dẫn giọng nói (F2)","Nyalakan panduan suara (F2)"],
+["ตั้งค่าเสียงนำทางสำหรับผู้พิการทางสายตา","Spoken guide settings","语音向导设置","音声ガイド設定","음성 안내 설정","Ajustes de la guía hablada","Réglages du guide vocal","Einstellungen der Sprachführung","Configurações do guia falado","Настройки голосового гида","Cài đặt hướng dẫn giọng nói","Pengaturan panduan suara"],
+["เสียงนำทาง","Spoken guide","语音向导","音声ガイド","음성 안내","Guía hablada","Guide vocal","Sprachführung","Guia falado","Голосовой гид","Hướng dẫn giọng nói","Panduan suara"],
+["ภาษาเสียงนำทาง","Spoken guide language","语音向导语言","音声ガイドの言語","음성 안내 언어","Idioma de la guía hablada","Langue du guide vocal","Sprache der Sprachführung","Idioma do guia falado","Язык голосового гида","Ngôn ngữ hướng dẫn","Bahasa panduan suara"],
+["เสียงนำทางภาษาไทย","Spoken guide in Thai","泰语语音向导","タイ語音声ガイド","태국어 음성 안내","Guía en tailandés","Guide en thaï","Sprachführung auf Thai","Guia em tailandês","Гид на тайском","Hướng dẫn bằng tiếng Thái","Panduan bahasa Thai"],
+["เสียงนำทางไทยและอังกฤษ","Spoken guide in Thai and English","泰英双语语音向导","タイ語と英語の音声ガイド","태국어·영어 음성 안내","Guía en tailandés e inglés","Guide en thaï et anglais","Sprachführung auf Thai und Englisch","Guia em tailandês e inglês","Гид на тайском и английском","Hướng dẫn tiếng Thái và tiếng Anh","Panduan Thai dan Inggris"],
+["ไทย+EN","TH+EN","泰+英","タイ+英","태+영","TH+EN","TH+EN","TH+EN","TH+EN","TH+EN","Thái+Anh","TH+EN"],
+["ปรับโทนสี","Color theme","配色主题","カラーテーマ","색상 테마","Tema de color","Thème de couleurs","Farbschema","Tema de cores","Цветовая тема","Chủ đề màu","Tema warna"],
+["ธีม","Theme","主题","テーマ","테마","Tema","Thème","Design","Tema","Тема","Chủ đề","Tema"],
+["เลิกทำ","Undo","撤销","元に戻す","실행 취소","Deshacer","Annuler","Rückgängig","Desfazer","Отменить","Hoàn tác","Urungkan"],
+["ทำซ้ำ","Redo","重做","やり直し","다시 실행","Rehacer","Rétablir","Wiederholen","Refazer","Повторить","Làm lại","Ulangi"],
+["คุณสมบัติ","Properties","属性","プロパティ","속성","Propiedades","Propriétés","Eigenschaften","Propriedades","Свойства","Thuộc tính","Properti"],
+["ภาษาเมนู","Menu language","菜单语言","メニュー言語","메뉴 언어","Idioma del menú","Langue du menu","Menüsprache","Idioma do menu","Язык меню","Ngôn ngữ menu","Bahasa menu"],
+["ค้นหาสัญลักษณ์… (fermata, coda, ff)","Search symbols… (fermata, coda, ff)","搜索符号…（fermata、coda、ff）","記号を検索…（fermata, coda, ff）","기호 검색… (fermata, coda, ff)","Buscar símbolos… (fermata, coda, ff)","Rechercher un symbole… (fermata, coda, ff)","Symbole suchen… (fermata, coda, ff)","Buscar símbolos… (fermata, coda, ff)","Поиск символов… (fermata, coda, ff)","Tìm ký hiệu… (fermata, coda, ff)","Cari simbol… (fermata, coda, ff)"],
+["กระดาษโน้ต ใช้ลูกศรซ้ายขวาเลื่อนทีละโน้ต","Score — use left and right arrows to move note by note","乐谱 — 用左右方向键逐个音符移动","楽譜 — 左右矢印で音符ごとに移動","악보 — 좌우 화살표로 음표 이동","Partitura — flechas izquierda/derecha para moverte por notas","Partition — flèches gauche/droite pour passer de note en note","Partitur — mit Pfeil links/rechts von Note zu Note","Partitura — setas esquerda/direita para mover por notas","Партитура — стрелки влево/вправо для перехода по нотам","Bản nhạc — dùng mũi tên trái/phải để di chuyển từng nốt","Partitur — panah kiri/kanan untuk pindah per not"],
+// transport
+["หยุด","Stop","停止","停止","정지","Detener","Arrêter","Stopp","Parar","Стоп","Dừng","Berhenti"],
+["เล่น","Play","播放","再生","재생","Reproducir","Lecture","Wiedergabe","Reproduzir","Воспроизвести","Phát","Putar"],
+["วนซ้ำช่วงที่เลือก","Loop selection","循环所选范围","選択範囲をループ","선택 구간 반복","Repetir selección","Boucler la sélection","Auswahl wiederholen","Repetir seleção","Повтор выделения","Lặp vùng chọn","Ulangi pilihan"],
+["เมโทรนอม","Metronome","节拍器","メトロノーム","메트로놈","Metrónomo","Métronome","Metronom","Metrônomo","Метроном","Máy đếm nhịp","Metronom"],
+["ระดับเสียง","Volume","音量","音量","볼륨","Volumen","Volume","Lautstärke","Volume","Громкость","Âm lượng","Volume"],
+// tabs
+["บันทึกโน้ต","Write","记谱","入力","입력","Escribir","Saisie","Eingabe","Escrever","Ввод","Ghi nốt","Tulis"],
+["สัญลักษณ์","Notations","记号","記号","기호","Notaciones","Notations","Notation","Notações","Обозначения","Ký hiệu","Notasi"],
+["ข้อความ","Text","文本","テキスト","텍스트","Texto","Texte","Text","Texto","Текст","Văn bản","Teks"],
+["เครื่องดนตรี & ห้อง","Instruments & measures","乐器与小节","楽器と小節","악기 및 마디","Instrumentos y compases","Instruments et mesures","Instrumente & Takte","Instrumentos e compassos","Инструменты и такты","Nhạc cụ & ô nhịp","Instrumen & birama"],
+["จัดหน้า","Layout","版面","レイアウト","레이아웃","Diseño","Mise en page","Layout","Layout","Макет","Bố cục","Tata letak"],
+["ส่งออก","Export","导出","書き出し","내보내기","Exportar","Exporter","Exportieren","Exportar","Экспорт","Xuất","Ekspor"],
+// ribbon groups & buttons
+["โหมด","Mode","模式","モード","모드","Modo","Mode","Modus","Modo","Режим","Chế độ","Mode"],
+["ใส่โน้ต","Note input","输入音符","音符入力","음표 입력","Entrada de notas","Saisie de notes","Noteneingabe","Inserir notas","Ввод нот","Nhập nốt","Input not"],
+["เลือก","Select","选择","選択","선택","Seleccionar","Sélection","Auswahl","Selecionar","Выбор","Chọn","Pilih"],
+["ห้องเพลง","Measures","小节","小節","마디","Compases","Mesures","Takte","Compassos","Такты","Ô nhịp","Birama"],
+["เสียง (Voice)","Voice","声部","声部","성부","Voz","Voix","Stimme","Voz","Голос","Bè","Suara"],
+["ก้านขึ้น","stem up","符干向上","符尾上","기둥 위","plica arriba","hampe haut","Hals oben","haste p/ cima","штиль вверх","đuôi lên","tangkai atas"],
+["ก้านลง","stem down","符干向下","符尾下","기둥 아래","plica abajo","hampe bas","Hals unten","haste p/ baixo","штиль вниз","đuôi xuống","tangkai bawah"],
+["ค่าตัวโน้ต","Duration","时值","音価","음가","Duración","Durée","Notenwert","Duração","Длительность","Trường độ","Durasi"],
+["ตัวกลม","whole","全音符","全音符","온음표","redonda","ronde","Ganze","semibreve","целая","nốt tròn","not penuh"],
+["ตัวขาว","half","二分音符","2分音符","2분음표","blanca","blanche","Halbe","mínima","половинная","nốt trắng","not setengah"],
+["ตัวดำ","quarter","四分音符","4分音符","4분음표","negra","noire","Viertel","semínima","четвертная","nốt đen","not seperempat"],
+["เขบ็ต 1 ชั้น","eighth","八分音符","8分音符","8분음표","corchea","croche","Achtel","colcheia","восьмая","nốt móc đơn","not 1/8"],
+["เขบ็ต 2 ชั้น","16th","十六分音符","16分音符","16분음표","semicorchea","double croche","Sechzehntel","semicolcheia","шестнадцатая","nốt móc kép","not 1/16"],
+["เขบ็ต 3 ชั้น","32nd","三十二分音符","32分音符","32분음표","fusa","triple croche","Zweiunddreißigstel","fusa","тридцать вторая","nốt móc ba","not 1/32"],
+["เขบ็ต 4 ชั้น","64th","六十四分音符","64分音符","64분음표","semifusa","quadruple croche","Vierundsechzigstel","semifusa","шестьдесят четвёртая","nốt móc bốn","not 1/64"],
+["1ชั้น","8th","8分","8分","8분","1/8","1/8","1/8","1/8","1/8","móc đơn","1/8"],
+["2ชั้น","16th","16分","16分","16분","1/16","1/16","1/16","1/16","1/16","móc kép","1/16"],
+["3ชั้น","32nd","32分","32分","32분","1/32","1/32","1/32","1/32","1/32","móc ba","1/32"],
+["4ชั้น","64th","64分","64分","64분","1/64","1/64","1/64","1/64","1/64","móc bốn","1/64"],
+["จุด","Dot","附点","付点","점","Puntillo","Point","Punkt","Ponto","Точка","Chấm dôi","Titik"],
+["ตัวหยุด & เครื่องหมาย","Rests & accidentals","休止符与变音记号","休符と臨時記号","쉼표 및 임시표","Silencios y alteraciones","Silences et altérations","Pausen & Vorzeichen","Pausas e acidentes","Паузы и знаки","Dấu lặng & dấu hóa","Tanda diam & aksidental"],
+["ตัวหยุด","Rest","休止符","休符","쉼표","Silencio","Silence","Pause","Pausa","Пауза","Dấu lặng","Tanda diam"],
+["ชาร์ป","Sharp","升号","シャープ","샵","Sostenido","Dièse","Kreuz","Sustenido","Диез","Thăng","Kres"],
+["แฟลต","Flat","降号","フラット","플랫","Bemol","Bémol","B","Bemol","Бемоль","Giáng","Mol"],
+["เนเชอรัล","Natural","还原号","ナチュラル","내추럴","Becuadro","Bécarre","Auflöser","Bequadro","Бекар","Bình","Pugar"],
+["ดับเบิล♯","Double ♯","重升","ダブル♯","더블 ♯","Doble ♯","Double ♯","Doppel-♯","Dobrado ♯","Дубль ♯","Thăng kép","Kres ganda"],
+["ดับเบิล♭","Double ♭","重降","ダブル♭","더블 ♭","Doble ♭","Double ♭","Doppel-♭","Dobrado ♭","Дубль ♭","Giáng kép","Mol ganda"],
+["ระดับเสียง ","Pitch ","音高 ","音高 ","음높이 ","Altura ","Hauteur ","Tonhöhe ","Altura ","Высота ","Cao độ ","Nada "],
+["ออกเทฟ","Octave","八度","オクターブ","옥타브","Octava","Octave","Oktave","Oitava","Октава","Quãng tám","Oktaf"],
+["ใส่ด้วยตัวอักษร","Enter by letter","按字母输入","文字で入力","글자로 입력","Entrada por letra","Saisie par lettre","Eingabe per Buchstabe","Entrada por letra","Ввод буквами","Nhập bằng chữ","Input dengan huruf"],
+["Shift = คอร์ด","Shift = chord","Shift = 和弦","Shift = 和音","Shift = 화음","Shift = acorde","Maj = accord","Umschalt = Akkord","Shift = acorde","Shift = аккорд","Shift = hợp âm","Shift = akor"],
+["ใส่โน้ต ","Enter note ","输入音符 ","音符入力 ","음표 입력 ","Nota ","Note ","Note ","Nota ","Нота ","Nhập nốt ","Not "],
+["ไดนามิก ","Dynamic ","力度 ","強弱 ","셈여림 ","Dinámica ","Nuance ","Dynamik ","Dinâmica ","Динамика ","Cường độ ","Dinamika "],
+["เส้น","Lines","线条","線","선","Líneas","Lignes","Linien","Linhas","Линии","Đường","Garis"],
+["เส้นกั้นห้อง & ย้อน","Barlines & repeats","小节线与反复","小節線と反復","세로줄 및 반복","Barras y repeticiones","Barres et reprises","Taktstriche & Wiederholungen","Barras e repetições","Тактовые черты и репризы","Vạch nhịp & lặp lại","Garis birama & pengulangan"],
+["เส้นกั้นห้อง & การย้อน","Barlines & repeats","小节线与反复","小節線と反復","세로줄 및 반복","Barras y repeticiones","Barres et reprises","Taktstriche & Wiederholungen","Barras e repetições","Тактовые черты и репризы","Vạch nhịp & lặp lại","Garis birama & pengulangan"],
+["เริ่มย้อน","Start repeat","反复开始","反復開始","도돌이 시작","Inicio de repetición","Début de reprise","Wiederholung Anfang","Início de repetição","Начало репризы","Bắt đầu lặp","Awal ulang"],
+["จบย้อน","End repeat","反复结束","反復終了","도돌이 끝","Fin de repetición","Fin de reprise","Wiederholung Ende","Fim de repetição","Конец репризы","Kết thúc lặp","Akhir ulang"],
+["หัวเพลง","Header","标题区","ヘッダー","머리말","Encabezado","En-tête","Kopf","Cabeçalho","Заголовок","Tiêu đề","Kepala"],
+["ชื่อเพลง","Title","标题","タイトル","제목","Título","Titre","Titel","Título","Название","Tên bài","Judul"],
+["ชื่อรอง","Subtitle","副标题","サブタイトル","부제","Subtítulo","Sous-titre","Untertitel","Subtítulo","Подзаголовок","Phụ đề","Subjudul"],
+["ผู้ประพันธ์","Composer","作曲","作曲者","작곡가","Compositor","Compositeur","Komponist","Compositor","Композитор","Nhạc sĩ","Komposer"],
+["ผู้แต่งคำร้อง","Lyricist","作词","作詞者","작사가","Letrista","Parolier","Texter","Letrista","Автор слов","Người viết lời","Penulis lirik"],
+["ข้อความบนโน้ต","Text on note","音符文本","音符のテキスト","음표 텍스트","Texto en nota","Texte sur la note","Text an Note","Texto na nota","Текст у ноты","Chữ trên nốt","Teks pada not"],
+["เนื้อร้อง","Lyrics","歌词","歌詞","가사","Letra","Paroles","Liedtext","Letra","Текст песни","Lời","Lirik"],
+["คอร์ด","Chord","和弦","コード","코드","Acorde","Accord","Akkord","Acorde","Аккорд","Hợp âm","Akor"],
+["ข้อความระดับห้อง","Measure text","小节文本","小節テキスト","마디 텍스트","Texto de compás","Texte de mesure","Takttext","Texto do compasso","Текст такта","Chữ ô nhịp","Teks birama"],
+["เครื่องดนตรี","Instruments","乐器","楽器","악기","Instrumentos","Instruments","Instrumente","Instrumentos","Инструменты","Nhạc cụ","Instrumen"],
+["เพิ่ม","Add","添加","追加","추가","Añadir","Ajouter","Hinzufügen","Adicionar","Добавить","Thêm","Tambah"],
+["จัดการ","Manage","管理","管理","관리","Gestionar","Gérer","Verwalten","Gerenciar","Управление","Quản lý","Kelola"],
+["หลายห้อง…","Several…","多个小节…","複数…","여러 마디…","Varios…","Plusieurs…","Mehrere…","Vários…","Несколько…","Nhiều ô…","Beberapa…"],
+["กุญแจ & อัตราจังหวะ","Clefs & time","谱号与拍号","音部記号と拍子","음자리표 및 박자","Claves y compás","Clés et mesure","Schlüssel & Takt","Claves e compasso","Ключи и размер","Khóa & nhịp","Kunci & sukat"],
+["บันไดเสียง","Key signature","调号","調号","조표","Armadura","Armure","Tonart","Armadura","Тональность","Hóa biểu","Tanda kunci"],
+["อัตราจังหวะ","Time signature","拍号","拍子記号","박자표","Compás","Chiffrage","Taktart","Fórmula de compasso","Размер","Số chỉ nhịp","Sukat"],
+["มุมมอง","View","视图","表示","보기","Vista","Affichage","Ansicht","Visualização","Вид","Chế độ xem","Tampilan"],
+["หน้า","Page","页面","ページ","페이지","Página","Page","Seite","Página","Страница","Trang","Halaman"],
+["ต่อเนื่อง","Continuous","连续","連続","연속","Continua","Continue","Fortlaufend","Contínua","Непрерывно","Liên tục","Berkelanjutan"],
+["ซูม","Zoom","缩放","ズーム","확대/축소","Zoom","Zoom","Zoom","Zoom","Масштаб","Thu phóng","Zoom"],
+["ย่อ","Out","缩小","縮小","축소","Alejar","Réduire","Verkleinern","Diminuir","Меньше","Thu nhỏ","Perkecil"],
+["ขยาย","In","放大","拡大","확대","Acercar","Agrandir","Vergrößern","Aumentar","Больше","Phóng to","Perbesar"],
+["พอดี","Fit","适合宽度","幅に合わせる","맞춤","Ajustar","Ajuster","Anpassen","Ajustar","По ширине","Vừa","Pas"],
+["ระบบบรรทัด","Systems","谱表系统","段","시스템","Sistemas","Systèmes","Systeme","Sistemas","Системы","Hệ khuông","Sistem"],
+["ตัดบรรทัด","System break","换行","段区切り","줄 나눔","Salto de sistema","Saut de système","Systemumbruch","Quebra de sistema","Разрыв системы","Ngắt dòng","Pemisah sistem"],
+["ซ่อนว่าง","Hide empty","隐藏空谱表","空の段を隠す","빈 보표 숨기기","Ocultar vacíos","Masquer vides","Leere ausblenden","Ocultar vazios","Скрыть пустые","Ẩn khuông trống","Sembunyikan kosong"],
+["ชื่อเครื่อง","Names","乐器名","楽器名","악기 이름","Nombres","Noms","Namen","Nomes","Названия","Tên nhạc cụ","Nama"],
+["ห้องต่อบรรทัด","Measures per line","每行小节数","1段の小節数","줄당 마디 수","Compases por línea","Mesures par ligne","Takte pro Zeile","Compassos por linha","Тактов в строке","Số ô mỗi dòng","Birama per baris"],
+["อัตโนมัติ","Auto","自动","自動","자동","Auto","Auto","Auto","Auto","Авто","Tự động","Otomatis"],
+["อื่น ๆ","Other","其他","その他","기타","Otro","Autre","Andere","Outro","Другое","Khác","Lainnya"],
+["กว้างเท่ากัน","Equal widths","等宽","同じ幅","같은 너비","Anchos iguales","Largeurs égales","Gleiche Breite","Larguras iguais","Равная ширина","Rộng bằng nhau","Lebar sama"],
+["ทุกห้องกว้างเท่ากัน เส้นกั้นห้องตรงกันทุกบรรทัด","All measures the same width, barlines aligned on every line","所有小节等宽，各行小节线对齐","全小節を同じ幅にし小節線を揃える","모든 마디 같은 너비, 세로줄 정렬","Todos los compases del mismo ancho, barras alineadas","Toutes les mesures de même largeur, barres alignées","Alle Takte gleich breit, Taktstriche bündig","Todos os compassos com a mesma largura, barras alinhadas","Все такты одной ширины, черты выровнены","Mọi ô cùng độ rộng, vạch nhịp thẳng hàng","Semua birama sama lebar, garis sejajar"],
+["จัดเท่ากันทุกบรรทัด","Same on every line","每行相同","全段同じ","모든 줄 동일","Igual en cada línea","Identique à chaque ligne","Jede Zeile gleich","Igual em todas as linhas","Одинаково в каждой строке","Như nhau mọi dòng","Sama di setiap baris"],
+["ระยะ","Spacing","间距","間隔","간격","Espaciado","Espacement","Abstände","Espaçamento","Интервалы","Khoảng cách","Spasi"],
+["บรรทัด","Staves","谱表","段","보표","Pentagramas","Portées","Systeme","Pautas","Станы","Khuông","Paranada"],
+["โน้ต","Notes","音符","音符","음표","Notas","Notes","Noten","Notas","Ноты","Nốt","Not"],
+["วนช่วง","Loop","循环","ループ","반복","Bucle","Boucle","Schleife","Loop","Цикл","Lặp","Ulang"],
+["การตีความ","Interpretation","演奏诠释","演奏表現","해석","Interpretación","Interprétation","Interpretation","Interpretação","Исполнение","Diễn tấu","Interpretasi"],
+["มิกเซอร์","Mixer","混音台","ミキサー","믹서","Mezclador","Mixeur","Mixer","Mixer","Микшер","Bộ trộn","Mixer"],
+["เปิดมิกเซอร์","Open mixer","打开混音台","ミキサーを開く","믹서 열기","Abrir mezclador","Ouvrir le mixeur","Mixer öffnen","Abrir mixer","Открыть микшер","Mở bộ trộn","Buka mixer"],
+["ไฟล์งาน (แก้ต่อได้)","Project file (editable)","工程文件（可继续编辑）","プロジェクトファイル（編集可）","프로젝트 파일(편집 가능)","Archivo de proyecto (editable)","Fichier projet (modifiable)","Projektdatei (bearbeitbar)","Arquivo do projeto (editável)","Файл проекта (редактируемый)","Tệp dự án (sửa tiếp được)","File proyek (bisa diedit)"],
+["บันทึกลงเครื่อง","Save to computer","保存到电脑","PCに保存","컴퓨터에 저장","Guardar en el equipo","Enregistrer sur l’ordinateur","Auf Computer speichern","Salvar no computador","Сохранить на компьютер","Lưu vào máy","Simpan ke komputer"],
+["บันทึกเป็น…","Save as…","另存为…","名前を付けて保存…","다른 이름으로 저장…","Guardar como…","Enregistrer sous…","Speichern unter…","Salvar como…","Сохранить как…","Lưu thành…","Simpan sebagai…"],
+["เปิดไฟล์งาน","Open project","打开工程","プロジェクトを開く","프로젝트 열기","Abrir proyecto","Ouvrir un projet","Projekt öffnen","Abrir projeto","Открыть проект","Mở dự án","Buka proyek"],
+["แพ็กเกจ","Package","打包","パッケージ","패키지","Paquete","Lot","Paket","Pacote","Пакет","Gói","Paket"],
+["ทั้งหมด .zip","Everything .zip","全部 .zip","すべて .zip","전체 .zip","Todo .zip","Tout en .zip","Alles .zip","Tudo .zip","Всё .zip","Tất cả .zip","Semua .zip"],
+["รูปแบบเดี่ยว","Single formats","单一格式","個別形式","개별 형식","Formatos individuales","Formats séparés","Einzelformate","Formatos individuais","Отдельные форматы","Định dạng riêng","Format tunggal"],
+["โปรเจกต์","Project","工程","プロジェクト","프로젝트","Proyecto","Projet","Projekt","Projeto","Проект","Dự án","Proyek"],
+["นำเข้า","Import","导入","読み込み","가져오기","Importar","Importer","Importieren","Importar","Импорт","Nhập","Impor"],
+["MusicXML / โปรเจกต์","MusicXML / project","MusicXML / 工程","MusicXML / プロジェクト","MusicXML / 프로젝트","MusicXML / proyecto","MusicXML / projet","MusicXML / Projekt","MusicXML / projeto","MusicXML / проект","MusicXML / dự án","MusicXML / proyek"],
+["PDF / รูปโน้ต → ฟัง","PDF / sheet image → listen","PDF / 乐谱图片 → 试听","PDF / 楽譜画像 → 再生","PDF / 악보 이미지 → 듣기","PDF / imagen → escuchar","PDF / image → écouter","PDF / Notenbild → anhören","PDF / imagem → ouvir","PDF / изображение → слушать","PDF / ảnh nhạc → nghe","PDF / gambar not → dengar"],
+["Claude ช่วยอ่าน PDF","Claude reads the PDF","由 Claude 识读 PDF","Claude が PDF を読み取り","Claude가 PDF 판독","Claude lee el PDF","Claude lit le PDF","Claude liest das PDF","Claude lê o PDF","Claude читает PDF","Claude đọc PDF","Claude membaca PDF"],
+["คัดลอก MusicXML","Copy MusicXML","复制 MusicXML","MusicXML をコピー","MusicXML 복사","Copiar MusicXML","Copier MusicXML","MusicXML kopieren","Copiar MusicXML","Копировать MusicXML","Sao chép MusicXML","Salin MusicXML"],
+["เพิ่มท้ายเพลง","Add at end","末尾添加","末尾に追加","끝에 추가","Añadir al final","Ajouter à la fin","Am Ende anfügen","Adicionar no fim","В конец","Thêm cuối","Tambah di akhir"],
+["เพิ่มท้าย","Add at end","末尾添加","末尾に追加","끝에 추가","Añadir al final","Ajouter à la fin","Am Ende","Adicionar no fim","В конец","Thêm cuối","Tambah akhir"],
+["เพิ่มห้องท้ายเพลง","Add measure at end","在末尾添加小节","末尾に小節を追加","끝에 마디 추가","Añadir compás al final","Ajouter une mesure à la fin","Takt am Ende anfügen","Adicionar compasso no fim","Добавить такт в конец","Thêm ô nhịp cuối","Tambah birama di akhir"],
+["แทรกก่อน","Insert before","在前插入","前に挿入","앞에 삽입","Insertar antes","Insérer avant","Davor einfügen","Inserir antes","Вставить перед","Chèn trước","Sisipkan sebelum"],
+["แทรกหลัง","Insert after","在后插入","後に挿入","뒤에 삽입","Insertar después","Insérer après","Danach einfügen","Inserir depois","Вставить после","Chèn sau","Sisipkan sesudah"],
+["แทรกห้องก่อน","Insert measure before","在前插入小节","前に小節を挿入","앞에 마디 삽입","Insertar compás antes","Insérer une mesure avant","Takt davor einfügen","Inserir compasso antes","Вставить такт перед","Chèn ô trước","Sisipkan birama sebelum"],
+["แทรกห้องหลัง","Insert measure after","在后插入小节","後に小節を挿入","뒤에 마디 삽입","Insertar compás después","Insérer une mesure après","Takt danach einfügen","Inserir compasso depois","Вставить такт после","Chèn ô sau","Sisipkan birama sesudah"],
+["ลบห้อง","Delete measure","删除小节","小節を削除","마디 삭제","Eliminar compás","Supprimer la mesure","Takt löschen","Excluir compasso","Удалить такт","Xóa ô nhịp","Hapus birama"],
+["เครื่องมือห้องเพลง","Measure tools","小节工具","小節ツール","마디 도구","Herramientas de compás","Outils de mesure","Taktwerkzeuge","Ferramentas de compasso","Инструменты такта","Công cụ ô nhịp","Alat birama"],
+["ลบ","Delete","删除","削除","삭제","Eliminar","Supprimer","Löschen","Excluir","Удалить","Xóa","Hapus"],
+["ห้อง","measure","小节","小節","마디","compás","mesure","Takt","compasso","такт","ô","birama"],
+// palettes
+["กุญแจประจำหลัก (Clefs)","Clefs","谱号","音部記号","음자리표","Claves","Clés","Schlüssel","Claves","Ключи","Khóa nhạc","Kunci"],
+["บันไดเสียง (Key signatures)","Key signatures","调号","調号","조표","Armaduras","Armures","Tonarten","Armaduras","Тональности","Hóa biểu","Tanda kunci"],
+["อัตราจังหวะ (Time)","Time signatures","拍号","拍子記号","박자표","Compases","Chiffrages","Taktarten","Fórmulas de compasso","Размеры","Số chỉ nhịp","Sukat"],
+["เครื่องหมายแปลงเสียง","Accidentals","变音记号","臨時記号","임시표","Alteraciones","Altérations","Vorzeichen","Acidentes","Знаки альтерации","Dấu hóa","Aksidental"],
+["เส้น (Lines)","Lines","线条","線","선","Líneas","Lignes","Linien","Linhas","Линии","Đường","Garis"],
+["ข้อความ & Tempo","Text & tempo","文本与速度","テキストとテンポ","텍스트 및 템포","Texto y tempo","Texte et tempo","Text & Tempo","Texto e andamento","Текст и темп","Văn bản & nhịp độ","Teks & tempo"],
+["ห้อง (Measures)","Measures","小节","小節","마디","Compases","Mesures","Takte","Compassos","Такты","Ô nhịp","Birama"],
+// inspector
+["ไม่มีสิ่งที่เลือก","Nothing selected","未选择","選択なし","선택 없음","Nada seleccionado","Aucune sélection","Nichts ausgewählt","Nada selecionado","Ничего не выбрано","Chưa chọn gì","Tidak ada pilihan"],
+["ช่วงที่เลือก","Selection","所选范围","選択範囲","선택 범위","Selección","Sélection","Auswahl","Seleção","Выделение","Vùng chọn","Pilihan"],
+["คัดลอก","Copy","复制","コピー","복사","Copiar","Copier","Kopieren","Copiar","Копировать","Sao chép","Salin"],
+["วาง","Paste","粘贴","貼り付け","붙여넣기","Pegar","Coller","Einfügen","Colar","Вставить","Dán","Tempel"],
+["ล้าง","Clear","清除","クリア","지우기","Borrar","Effacer","Leeren","Limpar","Очистить","Xóa sạch","Bersihkan"],
+["มีจุด","dotted","附点","付点","점","con puntillo","pointée","punktiert","pontuada","с точкой","có chấm","bertitik"],
+["เสียงจริง","sounding","实际音","実音","실음","real","son réel","klingend","real","звучание","âm thực","nada asli"],
+["ย้ายไปเสียง","Move to voice","移到声部","声部へ移動","성부로 이동","Mover a voz","Déplacer vers la voix","In Stimme verschieben","Mover para voz","В голос","Chuyển sang bè","Pindah ke suara"],
+["ห้องที่","Measure","第","小節","마디","Compás","Mesure","Takt","Compasso","Такт","Ô nhịp","Birama"],
+["เส้นกั้นท้าย","End barline","结束小节线","終止線","끝 세로줄","Barra final","Barre de fin","Schlussstrich","Barra final","Конечная черта","Vạch kết","Garis akhir"],
+["เริ่มย้อน (start repeat)","Start repeat","反复开始","反復開始","도돌이 시작","Inicio de repetición","Début de reprise","Wiederholung Anfang","Início de repetição","Начало репризы","Bắt đầu lặp","Awal ulang"],
+["ตัดบรรทัดหลังห้องนี้","System break after this measure","此小节后换行","この小節の後で改段","이 마디 뒤 줄 나눔","Salto tras este compás","Saut après cette mesure","Umbruch nach diesem Takt","Quebra após este compasso","Разрыв после такта","Ngắt dòng sau ô này","Pemisah setelah birama ini"],
+["🗑 ลบห้อง","🗑 Delete measure","🗑 删除小节","🗑 小節を削除","🗑 마디 삭제","🗑 Eliminar compás","🗑 Supprimer la mesure","🗑 Takt löschen","🗑 Excluir compasso","🗑 Удалить такт","🗑 Xóa ô","🗑 Hapus birama"],
+["เครื่องดนตรีในสกอร์","Instruments in score","乐谱中的乐器","楽譜の楽器","악보의 악기","Instrumentos de la partitura","Instruments de la partition","Instrumente der Partitur","Instrumentos da partitura","Инструменты партитуры","Nhạc cụ trong bản nhạc","Instrumen dalam partitur"],
+["ชื่อเครื่องดนตรี","Instrument name","乐器名称","楽器名","악기 이름","Nombre del instrumento","Nom de l’instrument","Instrumentname","Nome do instrumento","Название инструмента","Tên nhạc cụ","Nama instrumen"],
+["2 บรรทัด","2 staves","2 行谱表","2段","2보표","2 pentagramas","2 portées","2 Systeme","2 pautas","2 стана","2 khuông","2 paranada"],
+["ขึ้น","Up","上","上","위","Arriba","Haut","Hoch","Cima","Вверх","Lên","Atas"],
+["ลง","Down","下","下","아래","Abajo","Bas","Runter","Baixo","Вниз","Xuống","Bawah"],
+["＋ เพิ่มเครื่องดนตรี","＋ Add instrument","＋ 添加乐器","＋ 楽器を追加","＋ 악기 추가","＋ Añadir instrumento","＋ Ajouter un instrument","＋ Instrument hinzufügen","＋ Adicionar instrumento","＋ Добавить инструмент","＋ Thêm nhạc cụ","＋ Tambah instrumen"],
+["เพิ่มเครื่องดนตรี","Add instrument","添加乐器","楽器を追加","악기 추가","Añadir instrumento","Ajouter un instrument","Instrument hinzufügen","Adicionar instrumento","Добавить инструмент","Thêm nhạc cụ","Tambah instrumen"],
+["การแสดงระดับเสียง","Pitch display","音高显示","音高表示","음높이 표시","Visualización de altura","Affichage des hauteurs","Tonhöhenanzeige","Exibição de altura","Отображение высоты","Hiển thị cao độ","Tampilan nada"],
+["Concert pitch (แสดงเสียงจริง)","Concert pitch (show sounding pitch)","音乐会音高（显示实际音）","実音表示（コンサートピッチ）","콘서트 피치(실음 표시)","Altura de concierto (sonido real)","Hauteur réelle (en ut)","Klingend notiert (Concert pitch)","Altura de concerto (som real)","Концертный строй (реальное звучание)","Cao độ thực (concert pitch)","Nada konser (nada asli)"],
+["ข้อมูลเพลง","Score info","乐谱信息","楽譜情報","악보 정보","Información de la partitura","Informations","Partiturinfo","Informações da partitura","Сведения о партитуре","Thông tin bản nhạc","Info partitur"],
+["คำร้อง","Lyricist","作词","作詞","작사","Letrista","Parolier","Texter","Letrista","Слова","Lời","Lirik"],
+["ห้อง/บรรทัด","Measures per line","每行小节","1段の小節","줄당 마디","Compases/línea","Mesures/ligne","Takte/Zeile","Compassos/linha","Тактов/строка","Ô/dòng","Birama/baris"],
+["เลขห้อง","Measure numbers","小节编号","小節番号","마디 번호","Números de compás","Numéros de mesure","Taktnummern","Números de compasso","Номера тактов","Số ô nhịp","Nomor birama"],
+["ต้นบรรทัด","Start of line","每行开头","段の先頭","줄 시작","Inicio de línea","Début de ligne","Zeilenanfang","Início da linha","Начало строки","Đầu dòng","Awal baris"],
+["ทุกห้อง","Every measure","每小节","全小節","모든 마디","Cada compás","Chaque mesure","Jeder Takt","Todo compasso","Каждый такт","Mọi ô","Setiap birama"],
+["ไม่แสดง","Hidden","隐藏","非表示","숨김","Oculto","Masqué","Ausgeblendet","Oculto","Скрыто","Ẩn","Tersembunyi"],
+["ระยะบรรทัด","Staff spacing","谱表间距","段間隔","보표 간격","Espaciado de pentagramas","Espacement des portées","Systemabstand","Espaço entre pautas","Интервал станов","Khoảng cách khuông","Jarak paranada"],
+["ระยะระบบ","System spacing","系统间距","システム間隔","시스템 간격","Espaciado de sistemas","Espacement des systèmes","Akkoladenabstand","Espaço entre sistemas","Интервал систем","Khoảng cách hệ","Jarak sistem"],
+["ซ่อนบรรทัดว่าง (ยกเว้นระบบแรก)","Hide empty staves (except first system)","隐藏空谱表（首行除外）","空の段を隠す（最初の段以外）","빈 보표 숨기기(첫 시스템 제외)","Ocultar pentagramas vacíos (salvo el primero)","Masquer les portées vides (sauf le 1er système)","Leere Systeme ausblenden (außer erstem)","Ocultar pautas vazias (exceto a primeira)","Скрыть пустые станы (кроме первой системы)","Ẩn khuông trống (trừ hệ đầu)","Sembunyikan paranada kosong (kecuali pertama)"],
+["แสดงชื่อเครื่องดนตรี","Show instrument names","显示乐器名","楽器名を表示","악기 이름 표시","Mostrar nombres","Afficher les noms","Instrumentnamen zeigen","Mostrar nomes","Показывать названия","Hiện tên nhạc cụ","Tampilkan nama instrumen"],
+["สถิติ","Statistics","统计","統計","통계","Estadísticas","Statistiques","Statistik","Estatísticas","Статистика","Thống kê","Statistik"],
+["ไม่ได้เลือก","Nothing selected","未选择","未選択","선택 안 함","Sin selección","Aucune sélection","Keine Auswahl","Sem seleção","Не выбрано","Chưa chọn","Tidak dipilih"],
+["● โหมดใส่โน้ต","● Note input","● 输入音符","● 音符入力","● 음표 입력","● Entrada de notas","● Saisie de notes","● Noteneingabe","● Inserir notas","● Ввод нот","● Nhập nốt","● Input not"],
+["โหมดเลือก","Select mode","选择模式","選択モード","선택 모드","Modo selección","Mode sélection","Auswahlmodus","Modo seleção","Режим выбора","Chế độ chọn","Mode pilih"],
+["บันไดเสียง:","Key:","调号：","調:","조:","Tonalidad:","Tonalité :","Tonart:","Tom:","Тональность:","Giọng:","Nada dasar:"],
+["เสียง","Voice","声部","声部","성부","Voz","Voix","Stimme","Voz","Голос","Bè","Suara"],
+["▭ หน้า","▭ Page","▭ 页面","▭ ページ","▭ 페이지","▭ Página","▭ Page","▭ Seite","▭ Página","▭ Страница","▭ Trang","▭ Halaman"],
+["⇥ ต่อเนื่อง","⇥ Continuous","⇥ 连续","⇥ 連続","⇥ 연속","⇥ Continua","⇥ Continue","⇥ Fortlaufend","⇥ Contínua","⇥ Непрерывно","⇥ Liên tục","⇥ Berkelanjutan"],
+["เลือกอยู่","Selected","已选择","選択中","선택됨","Seleccionado","Sélectionné","Ausgewählt","Selecionado","Выбрано","Đang chọn","Terpilih"],
+// new score / dialogs
+["สกอร์ใหม่","New score","新建乐谱","新しい楽譜","새 악보","Nueva partitura","Nouvelle partition","Neue Partitur","Nova partitura","Новая партитура","Bản nhạc mới","Partitur baru"],
+["เพลงใหม่","New song","新曲","新しい曲","새 곡","Nueva canción","Nouveau morceau","Neues Stück","Nova música","Новая пьеса","Bài mới","Lagu baru"],
+["ชื่อของคุณ","Your name","你的名字","あなたの名前","이름","Tu nombre","Votre nom","Dein Name","Seu nome","Ваше имя","Tên bạn","Nama Anda"],
+["จำนวนห้อง","Number of measures","小节数","小節数","마디 수","Número de compases","Nombre de mesures","Anzahl Takte","Número de compassos","Число тактов","Số ô nhịp","Jumlah birama"],
+["สร้างสกอร์","Create score","创建乐谱","楽譜を作成","악보 만들기","Crear partitura","Créer la partition","Partitur erstellen","Criar partitura","Создать партитуру","Tạo bản nhạc","Buat partitur"],
+["ว่าง","Blank","空白","空白","빈 악보","En blanco","Vide","Leer","Em branco","Пустая","Trống","Kosong"],
+["เริ่มด้วย Flute หนึ่งเครื่อง","Starts with one flute","以一支长笛开始","フルート1本で開始","플루트 하나로 시작","Empieza con una flauta","Commence avec une flûte","Beginnt mit einer Flöte","Começa com uma flauta","Начинается с одной флейты","Bắt đầu với một sáo","Mulai dengan satu flute"],
+["ค้นหา: trumpet, cello, drum…","Search: trumpet, cello, drum…","搜索：trumpet、cello、drum…","検索: trumpet, cello, drum…","검색: trumpet, cello, drum…","Buscar: trumpet, cello, drum…","Rechercher : trumpet, cello, drum…","Suche: trumpet, cello, drum…","Buscar: trumpet, cello, drum…","Поиск: trumpet, cello, drum…","Tìm: trumpet, cello, drum…","Cari: trumpet, cello, drum…"],
+["เสร็จ","Done","完成","完了","완료","Hecho","Terminé","Fertig","Concluído","Готово","Xong","Selesai"],
+["ยกเลิก","Cancel","取消","キャンセル","취소","Cancelar","Annuler","Abbrechen","Cancelar","Отмена","Hủy","Batal"],
+["ใช้","Apply","应用","適用","적용","Aplicar","Appliquer","Anwenden","Aplicar","Применить","Áp dụng","Terapkan"],
+["ปิด","Close","关闭","閉じる","닫기","Cerrar","Fermer","Schließen","Fechar","Закрыть","Đóng","Tutup"],
+["แทรก","Insert","插入","挿入","삽입","Insertar","Insérer","Einfügen","Inserir","Вставить","Chèn","Sisipkan"],
+["แทรกห้อง","Insert measures","插入小节","小節を挿入","마디 삽입","Insertar compases","Insérer des mesures","Takte einfügen","Inserir compassos","Вставить такты","Chèn ô nhịp","Sisipkan birama"],
+["ต่อท้ายห้อง","Add measures at end","末尾添加小节","末尾に小節を追加","끝에 마디 추가","Añadir compases al final","Ajouter des mesures à la fin","Takte anfügen","Adicionar compassos no fim","Добавить такты в конец","Thêm ô cuối","Tambah birama di akhir"],
+["จำนวน","Count","数量","数","개수","Cantidad","Nombre","Anzahl","Quantidade","Количество","Số lượng","Jumlah"],
+["ทิศทาง","Direction","方向","方向","방향","Dirección","Direction","Richtung","Direção","Направление","Hướng","Arah"],
+["ขั้นคู่","Interval","音程","音程","음정","Intervalo","Intervalle","Intervall","Intervalo","Интервал","Quãng","Interval"],
+["ขอบเขต","Scope","范围","範囲","범위","Alcance","Portée","Bereich","Escopo","Область","Phạm vi","Cakupan"],
+["ทั้งสกอร์","Whole score","整个乐谱","楽譜全体","악보 전체","Toda la partitura","Toute la partition","Gesamte Partitur","Partitura inteira","Вся партитура","Cả bản nhạc","Seluruh partitur"],
+["ย้ายบันไดเสียงตามด้วย","Transpose the key signature too","同时移调号","調号も移調","조표도 이조","Transportar también la armadura","Transposer aussi l’armure","Tonart mittransponieren","Transpor também a armadura","Транспонировать и тональность","Đổi cả hóa biểu","Ubah juga tanda kunci"],
+["ไมเนอร์ 2nd","minor 2nd","小二度","短2度","단2도","2.ª menor","seconde mineure","kleine Sekunde","2ª menor","малая секунда","quãng 2 thứ","sekunda minor"],
+["เมเจอร์ 2nd","major 2nd","大二度","長2度","장2도","2.ª mayor","seconde majeure","große Sekunde","2ª maior","большая секунда","quãng 2 trưởng","sekunda mayor"],
+["ไมเนอร์ 3rd","minor 3rd","小三度","短3度","단3도","3.ª menor","tierce mineure","kleine Terz","3ª menor","малая терция","quãng 3 thứ","terts minor"],
+["เมเจอร์ 3rd","major 3rd","大三度","長3度","장3도","3.ª mayor","tierce majeure","große Terz","3ª maior","большая терция","quãng 3 trưởng","terts mayor"],
+["เพอร์เฟกต์ 4th","perfect 4th","纯四度","完全4度","완전4도","4.ª justa","quarte juste","reine Quarte","4ª justa","чистая кварта","quãng 4 đúng","kuart murni"],
+["เพอร์เฟกต์ 5th","perfect 5th","纯五度","完全5度","완전5도","5.ª justa","quinte juste","reine Quinte","5ª justa","чистая квинта","quãng 5 đúng","kuint murni"],
+["ไมเนอร์ 6th","minor 6th","小六度","短6度","단6도","6.ª menor","sixte mineure","kleine Sexte","6ª menor","малая секста","quãng 6 thứ","sekst minor"],
+["เมเจอร์ 6th","major 6th","大六度","長6度","장6도","6.ª mayor","sixte majeure","große Sexte","6ª maior","большая секста","quãng 6 trưởng","sekst mayor"],
+["ไมเนอร์ 7th","minor 7th","小七度","短7度","단7도","7.ª menor","septième mineure","kleine Septime","7ª menor","малая септима","quãng 7 thứ","septim minor"],
+["เมเจอร์ 7th","major 7th","大七度","長7度","장7도","7.ª mayor","septième majeure","große Septime","7ª maior","большая септима","quãng 7 trưởng","septim mayor"],
+["ออกเทฟ","octave","八度","オクターブ","옥타브","octava","octave","Oktave","oitava","октава","quãng tám","oktaf"],
+["บันไดเสียงที่ห้อง","Key signature at measure","调号于小节","調号: 小節","조표 위치: 마디","Armadura en el compás","Armure à la mesure","Tonart ab Takt","Armadura no compasso","Тональность с такта","Hóa biểu tại ô","Tanda kunci di birama"],
+["อัตราจังหวะที่ห้อง","Time signature at measure","拍号于小节","拍子: 小節","박자표 위치: 마디","Compás en el compás","Chiffrage à la mesure","Taktart ab Takt","Fórmula no compasso","Размер с такта","Số chỉ nhịp tại ô","Sukat di birama"],
+["ไม่มี ♯♭","no ♯♭","无升降号","♯♭なし","♯♭ 없음","sin ♯♭","sans ♯♭","ohne ♯♭","sem ♯♭","без ♯♭","không ♯♭","tanpa ♯♭"],
+["จำนวนจังหวะ","Beats","拍数","拍数","박 수","Tiempos","Temps","Schläge","Tempos","Доли","Số phách","Ketukan"],
+["ตัวโน้ตต่อจังหวะ","Beat unit","单位拍","単位音符","단위 음표","Unidad de tiempo","Unité de temps","Zählzeit","Unidade de tempo","Единица доли","Đơn vị phách","Satuan ketukan"],
+["จำนวนห้องต่อบรรทัด","Measures per line","每行小节数","1段の小節数","줄당 마디 수","Compases por línea","Mesures par ligne","Takte pro Zeile","Compassos por linha","Тактов в строке","Số ô mỗi dòng","Birama per baris"],
+["ให้ทุกห้องกว้างเท่ากัน (เส้นกั้นห้องตรงกันทุกบรรทัด)","Make all measures the same width (aligned barlines)","所有小节等宽（小节线对齐）","全小節を同じ幅に（小節線を揃える）","모든 마디 같은 너비(세로줄 정렬)","Mismo ancho para todos (barras alineadas)","Même largeur pour toutes (barres alignées)","Alle Takte gleich breit (bündige Taktstriche)","Mesma largura para todos (barras alinhadas)","Одинаковая ширина тактов (черты выровнены)","Mọi ô cùng rộng (vạch thẳng hàng)","Semua birama sama lebar (garis sejajar)"],
+// themes
+["ปรับโทนสีแอป","App color theme","应用配色","アプリの配色","앱 색상 테마","Tema de color","Thème de l’application","App-Farbschema","Tema do app","Цветовая тема","Màu ứng dụng","Tema warna aplikasi"],
+["ธีมสำเร็จรูป","Preset themes","预设主题","プリセット","프리셋 테마","Temas predefinidos","Thèmes prédéfinis","Vorlagen","Temas prontos","Готовые темы","Chủ đề có sẵn","Tema bawaan"],
+["ปรับเอง","Custom","自定义","カスタム","사용자 지정","Personalizado","Personnalisé","Eigene","Personalizado","Свои настройки","Tùy chỉnh","Kustom"],
+["มืด","Dark","深色","ダーク","어둡게","Oscuro","Sombre","Dunkel","Escuro","Тёмная","Tối","Gelap"],
+["สว่าง","Light","浅色","ライト","밝게","Claro","Clair","Hell","Claro","Светлая","Sáng","Terang"],
+["สีหลัก (accent)","Accent color","强调色","アクセントカラー","강조 색","Color de acento","Couleur d’accent","Akzentfarbe","Cor de destaque","Акцентный цвет","Màu nhấn","Warna aksen"],
+["โทนพื้นหลัง","Background tone","背景色调","背景トーン","배경 톤","Tono de fondo","Teinte de fond","Hintergrundton","Tom do fundo","Тон фона","Tông nền","Nada latar"],
+["สีกระดาษโน้ต","Paper color","纸张颜色","用紙の色","종이 색","Color del papel","Couleur du papier","Papierfarbe","Cor do papel","Цвет бумаги","Màu giấy","Warna kertas"],
+["คืนค่าเริ่มต้น","Reset to default","恢复默认","既定に戻す","기본값 복원","Restablecer","Réinitialiser","Zurücksetzen","Restaurar padrão","Сбросить","Khôi phục mặc định","Atur ulang"],
+["ม่วง-ขาว","Purple & white","紫白","パープル＆ホワイト","보라·흰색","Morado y blanco","Violet et blanc","Lila & Weiß","Roxo e branco","Фиолетово-белая","Tím trắng","Ungu-putih"],
+// mixer
+["ใช้ VST / VST3","Using VST / VST3","使用 VST / VST3","VST / VST3 を使う","VST / VST3 사용","Usar VST / VST3","Utiliser VST / VST3","VST / VST3 verwenden","Usar VST / VST3","Использование VST / VST3","Dùng VST / VST3","Memakai VST / VST3"],
+["🎹 เชื่อมต่อ MIDI","🎹 Connect MIDI","🎹 连接 MIDI","🎹 MIDI に接続","🎹 MIDI 연결","🎹 Conectar MIDI","🎹 Connecter MIDI","🎹 MIDI verbinden","🎹 Conectar MIDI","🎹 Подключить MIDI","🎹 Kết nối MIDI","🎹 Hubungkan MIDI"],
+["🔄 ค้นหาพอร์ต MIDI ใหม่","🔄 Rescan MIDI ports","🔄 重新扫描 MIDI 端口","🔄 MIDIポート再検索","🔄 MIDI 포트 다시 찾기","🔄 Buscar puertos MIDI","🔄 Rechercher les ports MIDI","🔄 MIDI-Ports neu suchen","🔄 Procurar portas MIDI","🔄 Найти порты MIDI","🔄 Dò lại cổng MIDI","🔄 Cari ulang port MIDI"],
+["เชื่อมต่อ MIDI","Connect MIDI","连接 MIDI","MIDI に接続","MIDI 연결","Conectar MIDI","Connecter MIDI","MIDI verbinden","Conectar MIDI","Подключить MIDI","Kết nối MIDI","Hubungkan MIDI"],
+["พอร์ตที่พบ:","Ports found:","找到的端口：","検出ポート:","찾은 포트:","Puertos:","Ports trouvés :","Gefundene Ports:","Portas encontradas:","Найдены порты:","Cổng tìm thấy:","Port ditemukan:"],
+["เอฟเฟกต์และเอาต์พุต","Effects and output","效果与输出","エフェクトと出力","효과 및 출력","Efectos y salida","Effets et sortie","Effekte und Ausgang","Efeitos e saída","Эффекты и выход","Hiệu ứng & đầu ra","Efek & keluaran"],
+["ระดับ","Level","电平","レベル","레벨","Nivel","Niveau","Pegel","Nível","Уровень","Mức","Level"],
+["แพน","Pan","声像","パン","팬","Panorama","Pan","Panorama","Pan","Панорама","Cân bằng","Pan"],
+["เอาต์พุต","Output","输出","出力","출력","Salida","Sortie","Ausgang","Saída","Выход","Đầu ra","Keluaran"],
+["เสียงในแอป","In-app sound","应用内声音","アプリ内の音","앱 내 소리","Sonido de la app","Son de l’app","App-Klang","Som do app","Звук приложения","Âm trong ứng dụng","Suara aplikasi"],
+["MIDI ออก (VST / DAW)","MIDI out (VST / DAW)","MIDI 输出（VST / DAW）","MIDI出力（VST / DAW）","MIDI 출력 (VST / DAW)","Salida MIDI (VST / DAW)","Sortie MIDI (VST / DAW)","MIDI-Ausgang (VST / DAW)","Saída MIDI (VST / DAW)","MIDI-выход (VST / DAW)","Xuất MIDI (VST / DAW)","Keluaran MIDI (VST / DAW)"],
+["ทั้งสองอย่าง","Both","两者","両方","둘 다","Ambos","Les deux","Beides","Ambos","Оба","Cả hai","Keduanya"],
+["พอร์ต MIDI","MIDI port","MIDI 端口","MIDIポート","MIDI 포트","Puerto MIDI","Port MIDI","MIDI-Port","Porta MIDI","Порт MIDI","Cổng MIDI","Port MIDI"],
+["พอร์ต","Port","端口","ポート","포트","Puerto","Port","Port","Porta","Порт","Cổng","Port"],
+["ไม่พบพอร์ต","No ports found","未找到端口","ポートなし","포트 없음","Sin puertos","Aucun port","Keine Ports","Nenhuma porta","Порты не найдены","Không có cổng","Tidak ada port"],
+["ช่อง (channel)","Channel","通道","チャンネル","채널","Canal","Canal","Kanal","Canal","Канал","Kênh","Kanal"],
+["ช่อง MIDI","MIDI channel","MIDI 通道","MIDIチャンネル","MIDI 채널","Canal MIDI","Canal MIDI","MIDI-Kanal","Canal MIDI","Канал MIDI","Kênh MIDI","Kanal MIDI"],
+["(กลอง)","(drums)","（鼓）","（ドラム）","(드럼)","(batería)","(batterie)","(Schlagzeug)","(bateria)","(ударные)","(trống)","(drum)"],
+["＋ เพิ่มเอฟเฟกต์","＋ Add effect","＋ 添加效果","＋ エフェクト追加","＋ 효과 추가","＋ Añadir efecto","＋ Ajouter un effet","＋ Effekt hinzufügen","＋ Adicionar efeito","＋ Добавить эффект","＋ Thêm hiệu ứng","＋ Tambah efek"],
+["ลบเอฟเฟกต์","Remove effect","移除效果","エフェクト削除","효과 제거","Quitar efecto","Retirer l’effet","Effekt entfernen","Remover efeito","Удалить эффект","Xóa hiệu ứng","Hapus efek"],
+["เลื่อนขึ้น","Move up","上移","上へ","위로","Subir","Monter","Nach oben","Subir","Вверх","Lên trên","Naikkan"],
+["EQ 3 แบนด์","3-band EQ","三段均衡器","3バンドEQ","3밴드 EQ","EQ de 3 bandas","EQ 3 bandes","3-Band-EQ","EQ de 3 bandas","3-полосный EQ","EQ 3 dải","EQ 3 band"],
+["Reverb ห้องก้อง","Reverb","混响","リバーブ","리버브","Reverberación","Réverbération","Hall","Reverb","Реверберация","Vang","Reverb"],
+["Delay เสียงสะท้อน","Delay","延迟","ディレイ","딜레이","Retardo","Délai","Echo","Delay","Задержка","Trễ","Delay"],
+["Filter กรองเสียง","Filter","滤波器","フィルター","필터","Filtro","Filtre","Filter","Filtro","Фильтр","Bộ lọc","Filter"],
+["ทุ้ม dB","Low dB","低音 dB","低音 dB","저음 dB","Graves dB","Graves dB","Tiefen dB","Graves dB","НЧ dB","Trầm dB","Bass dB"],
+["กลาง dB","Mid dB","中音 dB","中音 dB","중음 dB","Medios dB","Médiums dB","Mitten dB","Médios dB","СЧ dB","Trung dB","Tengah dB"],
+["แหลม dB","High dB","高音 dB","高音 dB","고음 dB","Agudos dB","Aigus dB","Höhen dB","Agudos dB","ВЧ dB","Cao dB","Treble dB"],
+["เพิ่มเสียง dB","Makeup dB","增益 dB","メイクアップ dB","메이크업 dB","Ganancia dB","Gain dB","Aufholverstärkung dB","Ganho dB","Усиление dB","Bù dB","Penguatan dB"],
+["ขนาดห้อง วินาที","Size s","大小 秒","サイズ 秒","크기 초","Tamaño s","Taille s","Größe s","Tamanho s","Размер с","Kích thước giây","Ukuran detik"],
+["ผสม","Mix","混合","ミックス","믹스","Mezcla","Mélange","Mix","Mix","Микс","Trộn","Campur"],
+["เวลา วินาที","Time s","时间 秒","時間 秒","시간 초","Tiempo s","Temps s","Zeit s","Tempo s","Время с","Thời gian giây","Waktu detik"],
+["ความเร็ว Hz","Rate Hz","速率 Hz","レート Hz","속도 Hz","Velocidad Hz","Vitesse Hz","Rate Hz","Taxa Hz","Скорость Гц","Tốc độ Hz","Laju Hz"],
+["ความลึก ms","Depth ms","深度 ms","深さ ms","깊이 ms","Profundidad ms","Profondeur ms","Tiefe ms","Profundidade ms","Глубина мс","Độ sâu ms","Kedalaman ms"],
+["ความแตก","Drive","失真","ドライブ","드라이브","Saturación","Saturation","Verzerrung","Saturação","Перегруз","Độ méo","Drive"],
+["โทน Hz","Tone Hz","音色 Hz","トーン Hz","톤 Hz","Tono Hz","Tonalité Hz","Ton Hz","Tom Hz","Тон Гц","Âm sắc Hz","Nada Hz"],
+["ความถี่ตัด Hz","Cutoff Hz","截止频率 Hz","カットオフ Hz","차단 주파수 Hz","Corte Hz","Coupure Hz","Grenzfrequenz Hz","Corte Hz","Срез Гц","Tần số cắt Hz","Cutoff Hz"],
+// spoken guide settings
+["ตั้งค่าเสียงนำทาง","Spoken guide settings","语音向导设置","音声ガイド設定","음성 안내 설정","Ajustes de la guía hablada","Réglages du guide vocal","Einstellungen der Sprachführung","Configurações do guia falado","Настройки голосового гида","Cài đặt hướng dẫn giọng nói","Pengaturan panduan suara"],
+["ภาษา","Language","语言","言語","언어","Idioma","Langue","Sprache","Idioma","Язык","Ngôn ngữ","Bahasa"],
+["เสียงที่ใช้","Voice engine","语音引擎","音声エンジン","음성 엔진","Motor de voz","Moteur vocal","Sprachausgabe","Mecanismo de voz","Голосовой движок","Bộ đọc","Mesin suara"],
+["เสียงภาษาไทย","Thai voice","泰语语音","タイ語音声","태국어 음성","Voz tailandesa","Voix thaïe","Thai-Stimme","Voz tailandesa","Тайский голос","Giọng tiếng Thái","Suara Thai"],
+["เสียงภาษาอังกฤษ","English voice","英语语音","英語音声","영어 음성","Voz inglesa","Voix anglaise","Englische Stimme","Voz inglesa","Английский голос","Giọng tiếng Anh","Suara Inggris"],
+["ความเร็ว","Speed","语速","速度","속도","Velocidad","Vitesse","Tempo","Velocidade","Скорость","Tốc độ","Kecepatan"],
+["อ่านชื่อปุ่มและช่องต่าง ๆ เมื่อชี้เมาส์","Read buttons and fields on hover","悬停时朗读按钮和字段","ホバー時にボタン名を読む","마우스를 올리면 버튼 읽기","Leer botones al pasar el ratón","Lire les boutons au survol","Schaltflächen beim Zeigen vorlesen","Ler botões ao passar o mouse","Читать кнопки при наведении","Đọc nút khi rê chuột","Bacakan tombol saat disorot"],
+["อ่านโน้ตและห้องเมื่อชี้เมาส์บนกระดาษโน้ต","Read notes and measures on hover","悬停时朗读音符和小节","ホバー時に音符と小節を読む","악보에 마우스를 올리면 음표 읽기","Leer notas al pasar el ratón","Lire les notes au survol","Noten beim Zeigen vorlesen","Ler notas ao passar o mouse","Читать ноты при наведении","Đọc nốt khi rê chuột","Bacakan not saat disorot"],
+["อ่านข้อความแจ้งเตือน","Read notifications","朗读通知","通知を読む","알림 읽기","Leer notificaciones","Lire les notifications","Meldungen vorlesen","Ler notificações","Читать уведомления","Đọc thông báo","Bacakan notifikasi"],
+["🔊 ทดลองเสียง","🔊 Test voice","🔊 测试语音","🔊 音声テスト","🔊 음성 테스트","🔊 Probar voz","🔊 Tester la voix","🔊 Stimme testen","🔊 Testar voz","🔊 Проверить голос","🔊 Thử giọng","🔊 Uji suara"],
+["ปุ่มลัด","Shortcuts","快捷键","ショートカット","단축키","Atajos","Raccourcis","Tastenkürzel","Atalhos","Сочетания клавиш","Phím tắt","Pintasan"],
+["เปิด / ปิดเสียงนำทาง","Turn spoken guide on / off","开启/关闭语音向导","音声ガイドのオン/オフ","음성 안내 켜기/끄기","Activar / desactivar la guía","Activer / désactiver le guide","Sprachführung ein / aus","Ativar / desativar o guia","Вкл. / выкл. гид","Bật / tắt hướng dẫn","Nyalakan / matikan panduan"],
+["ฟังตำแหน่งและสถานะปัจจุบัน","Hear the current position","朗读当前位置","現在位置を聞く","현재 위치 듣기","Escuchar la posición actual","Entendre la position","Aktuelle Position anhören","Ouvir a posição atual","Прослушать позицию","Nghe vị trí hiện tại","Dengar posisi saat ini"],
+["ย้ายไปส่วนถัดไปของหน้าจอ (Shift ย้อนกลับ)","Move to the next screen area (Shift: back)","移到下一区域（Shift 返回）","次の領域へ（Shift で戻る）","다음 영역으로(Shift: 뒤로)","Ir a la siguiente zona (Mayús: atrás)","Zone suivante (Maj : retour)","Nächster Bereich (Umschalt: zurück)","Próxima área (Shift: voltar)","Следующая область (Shift — назад)","Sang vùng kế (Shift: lùi)","Area berikutnya (Shift: kembali)"],
+["เลื่อนระหว่างปุ่มในส่วนเดียวกัน","Move between buttons in an area","在区域内切换按钮","領域内のボタン移動","영역 안 버튼 이동","Moverse entre botones","Passer d’un bouton à l’autre","Zwischen Schaltflächen wechseln","Mover entre botões","Переход между кнопками","Di chuyển giữa các nút","Pindah antar tombol"],
+["กดปุ่มที่อยู่","Press the focused button","按下当前按钮","選択中のボタンを押す","선택한 버튼 누르기","Pulsar el botón","Activer le bouton","Schaltfläche drücken","Pressionar o botão","Нажать кнопку","Nhấn nút đang chọn","Tekan tombol"],
+["กลับไปกระดาษโน้ต","Back to the score","返回乐谱","楽譜に戻る","악보로 돌아가기","Volver a la partitura","Retour à la partition","Zurück zur Partitur","Voltar à partitura","Назад к партитуре","Về bản nhạc","Kembali ke partitur"],
+["เสียงในเครื่อง (เบราว์เซอร์)","Device voice (browser)","设备语音（浏览器）","端末の音声（ブラウザ）","기기 음성(브라우저)","Voz del dispositivo (navegador)","Voix de l’appareil (navigateur)","Gerätestimme (Browser)","Voz do dispositivo (navegador)","Голос устройства (браузер)","Giọng thiết bị (trình duyệt)","Suara perangkat (browser)"],
+["ส่งให้โปรแกรมอ่านหน้าจอ (NVDA, VoiceOver)","Send to screen reader (NVDA, VoiceOver)","发送给读屏软件（NVDA、VoiceOver）","スクリーンリーダーへ（NVDA, VoiceOver）","화면 낭독기로 보내기(NVDA, VoiceOver)","Enviar al lector de pantalla (NVDA, VoiceOver)","Lecteur d’écran (NVDA, VoiceOver)","An Screenreader (NVDA, VoiceOver)","Enviar ao leitor de tela (NVDA, VoiceOver)","В экранный диктор (NVDA, VoiceOver)","Gửi trình đọc màn hình (NVDA, VoiceOver)","Ke pembaca layar (NVDA, VoiceOver)"],
+// toasts (frequent)
+["เลือกโน้ตก่อน","Select a note first","请先选择音符","先に音符を選択","먼저 음표를 선택하세요","Selecciona una nota primero","Sélectionnez d’abord une note","Zuerst eine Note wählen","Selecione uma nota primeiro","Сначала выберите ноту","Hãy chọn nốt trước","Pilih not dulu"],
+["เลือกห้องก่อน","Select a measure first","请先选择小节","先に小節を選択","먼저 마디를 선택하세요","Selecciona un compás primero","Sélectionnez d’abord une mesure","Zuerst einen Takt wählen","Selecione um compasso primeiro","Сначала выберите такт","Hãy chọn ô nhịp trước","Pilih birama dulu"],
+["เลือกโน้ตหรือห้องก่อน","Select a note or measure first","请先选择音符或小节","先に音符か小節を選択","먼저 음표나 마디를 선택하세요","Selecciona una nota o compás","Sélectionnez une note ou une mesure","Zuerst Note oder Takt wählen","Selecione uma nota ou compasso","Сначала выберите ноту или такт","Hãy chọn nốt hoặc ô","Pilih not atau birama dulu"],
+["ไม่มีอะไรให้เลิกทำ","Nothing to undo","没有可撤销的操作","元に戻す操作なし","실행 취소할 항목 없음","Nada que deshacer","Rien à annuler","Nichts rückgängig zu machen","Nada para desfazer","Нечего отменять","Không có gì để hoàn tác","Tidak ada yang diurungkan"],
+["ไม่มีอะไรให้ทำซ้ำ","Nothing to redo","没有可重做的操作","やり直す操作なし","다시 실행할 항목 없음","Nada que rehacer","Rien à rétablir","Nichts zu wiederholen","Nada para refazer","Нечего повторять","Không có gì để làm lại","Tidak ada yang diulang"],
+["คลิปบอร์ดว่าง","Clipboard is empty","剪贴板为空","クリップボードは空","클립보드가 비어 있음","El portapapeles está vacío","Presse-papiers vide","Zwischenablage leer","Área de transferência vazia","Буфер обмена пуст","Bộ nhớ tạm trống","Papan klip kosong"],
+["บันทึกธีมแล้ว","Theme saved","主题已保存","テーマを保存しました","테마 저장됨","Tema guardado","Thème enregistré","Design gespeichert","Tema salvo","Тема сохранена","Đã lưu chủ đề","Tema disimpan"],
+["ยกเลิกการบันทึก","Save cancelled","已取消保存","保存を取り消しました","저장 취소됨","Guardado cancelado","Enregistrement annulé","Speichern abgebrochen","Salvamento cancelado","Сохранение отменено","Đã hủy lưu","Penyimpanan dibatalkan"],
+["ปิดเสียงนำทางแล้ว","Spoken guide off","语音向导已关闭","音声ガイドをオフにしました","음성 안내 꺼짐","Guía hablada desactivada","Guide vocal désactivé","Sprachführung aus","Guia falado desativado","Голосовой гид выключен","Đã tắt hướng dẫn","Panduan suara mati"],
+["การเปลี่ยนนี้มีผลเมื่อกดเล่นใหม่","This change applies the next time you press play","此更改在下次播放时生效","次の再生から反映されます","다음 재생부터 적용됩니다","Se aplicará al volver a reproducir","S’applique à la prochaine lecture","Gilt ab der nächsten Wiedergabe","Vale na próxima reprodução","Применится при следующем воспроизведении","Áp dụng khi phát lại","Berlaku saat diputar lagi"],
+["ลบเอฟเฟกต์แล้ว","Effect removed","已移除效果","エフェクトを削除しました","효과 제거됨","Efecto eliminado","Effet retiré","Effekt entfernt","Efeito removido","Эффект удалён","Đã xóa hiệu ứng","Efek dihapus"],
+["เปิดเพลงตัวอย่าง — คลิกโน้ตเพื่อแก้ หรือกด Space เพื่อฟัง","Sample score loaded — click a note to edit, or press Space to listen","已打开示例乐谱 — 点击音符编辑，或按空格键试听","サンプル楽譜 — 音符をクリックして編集、Space で再生","샘플 악보 — 음표를 클릭해 편집하거나 Space로 듣기","Partitura de ejemplo — haz clic en una nota o pulsa Espacio","Partition d’exemple — cliquez une note ou appuyez sur Espace","Beispielpartitur — Note anklicken oder Leertaste","Partitura de exemplo — clique numa nota ou aperte Espaço","Пример партитуры — щёлкните ноту или нажмите Пробел","Bản mẫu — bấm nốt để sửa hoặc nhấn Space để nghe","Partitur contoh — klik not atau tekan Spasi"],
+// english-only fallbacks for long help text
+["คลิกโน้ตเพื่อเลือก · คลิกพื้นที่ว่างในห้องเพื่อเลือกทั้งห้อง · Shift+คลิกเพื่อเลือกเป็นช่วง · กด","Click a note to select it · click an empty part of a measure to select the measure · Shift+click to select a range · press"],
+["เพื่อเริ่มใส่โน้ต แล้วพิมพ์ A–G","to start entering notes, then type A–G"],
+["ปุ่มลัด: 1–7 ค่าตัวโน้ต · 0 ตัวหยุด · ↑↓ ครึ่งเสียง · Ctrl+↑↓ ออกเทฟ · T tie · S slur · Ctrl+L เนื้อร้อง · Ctrl+K ค้นหาคำสั่ง · Space เล่น","Shortcuts: 1–7 duration · 0 rest · ↑↓ semitone · Ctrl+↑↓ octave · T tie · S slur · Ctrl+L lyrics · Ctrl+K commands · Space play"],
+["บรรทัด · Ctrl+C / Ctrl+V คัดลอก-วาง · Del ล้างโน้ต","staves · Ctrl+C / Ctrl+V copy-paste · Del clears notes"],
+["เลือกโน้ตแล้วกด Ctrl+Alt+1–4 เพื่อย้ายไปอีกเสียง · ในโหมดใส่โน้ต ปุ่มเหล่านี้สลับเสียงที่กำลังเขียน","Select a note and press Ctrl+Alt+1–4 to move it to another voice · in note input these buttons switch the voice you write"],
+["ปิดไว้ = แสดงโน้ตตามที่ผู้เล่นอ่าน (เช่น Trumpet in B♭ สูงขึ้นหนึ่งเสียงเต็ม)","Off = show the notes the player reads (for example Trumpet in B♭ a whole step higher)"],
+["ใส่ 1–16 ห้อง · การตัดบรรทัดเอง (Enter) ยังใช้ได้ และจะเริ่มนับใหม่จากห้องถัดไป","Enter 1–16 · manual system breaks (Enter) still work and restart the count"],
+["คอร์ดสัญลักษณ์ถูกย้ายตามอัตโนมัติ · Drum Set ไม่ถูกย้าย","Chord symbols move too · the drum set is not transposed"],
+["โน้ตที่เกินความยาวห้องใหม่จะถูกตัดออก","Notes longer than the new measure length are cut off"],
+["เปลี่ยนแล้วเห็นผลทันที และจำไว้ในเบราว์เซอร์นี้ · สีโน้ตบนกระดาษยังเป็นสีดำเพื่อให้อ่านง่าย","Changes apply at once and are remembered in this browser · notes stay black for easy reading"],
+["เบราว์เซอร์โหลดปลั๊กอิน VST หรือ VST3 โดยตรงไม่ได้ ให้ตั้ง","Browsers cannot load VST or VST3 plug-ins directly. Set the track's"],
+["ของแทร็กเป็น MIDI แล้วส่งไปยังโปรแกรมที่เปิด VST ได้ เช่น Reaper, Cakewalk, Ableton, FL Studio, Kontakt หรือ VSTHost · Windows ใช้พอร์ตเสมือน loopMIDI · Mac ใช้ IAC Driver","to MIDI and send it to a program that hosts VSTs, such as Reaper, Cakewalk, Ableton, FL Studio, Kontakt or VSTHost · Windows: loopMIDI virtual port · Mac: IAC Driver"],
+["ยังไม่พบพอร์ต MIDI — เปิด loopMIDI / IAC Driver หรือเสียบอุปกรณ์ MIDI แล้วกดค้นหาใหม่","No MIDI ports yet — start loopMIDI / IAC Driver or plug in a MIDI device, then rescan"],
+["แทร็กนี้ส่งออกเป็น MIDI อย่างเดียว เอฟเฟกต์ในแอปจึงไม่มีผล ให้ใส่เอฟเฟกต์ VST ในโปรแกรม DAW แทน หรือเลือก","This track sends MIDI only, so in-app effects have no effect. Add VST effects in your DAW, or choose"],
+["เบราว์เซอร์นี้ไม่รองรับ MIDI — ใช้ Chrome หรือ Edge บนคอมพิวเตอร์","This browser does not support MIDI — use Chrome or Edge on a computer"],
+["หน้านี้ใช้ MIDI ไม่ได้ (ถูกบล็อกหรือไม่ได้อนุญาต) — เปิดเว็บ GitHub ด้วย Chrome หรือ Edge แล้วกดอนุญาต MIDI","MIDI is not available on this page (blocked or not allowed) — open the GitHub web app in Chrome or Edge and allow MIDI"],
+["เชื่อมต่อ MIDI แล้ว แต่ยังไม่พบพอร์ต — เปิด loopMIDI หรือ IAC Driver ก่อน","MIDI connected but no ports found — start loopMIDI or IAC Driver first"],
+["การอ่านโน้ตจาก PDF หรือรูปภาพใช้ Claude ช่วยอ่าน จึงใช้ได้เมื่อเปิดแอปผ่านลิงก์ Claude เท่านั้น","Reading notes from a PDF or image uses Claude, so it only works when the app is opened through the Claude link"],
+["ในเวอร์ชันนี้ ถ้ามีไฟล์ต้นฉบับจาก MuseScore, Sibelius หรือ Finale ให้ส่งออกเป็น MusicXML แล้วเปิดแทน จะได้โน้ตครบถูกต้องกว่า","Here, if you have the original from MuseScore, Sibelius or Finale, export MusicXML and open that instead for accurate notes"],
+["Claude จะอ่านโน้ตทีละส่วนของหน้า ใช้เวลาประมาณ 20–60 วินาทีต่อส่วน การอ่านใช้โควตา Claude ของคุณ","Claude reads the page part by part, about 20–60 seconds each, using your Claude quota"],
+["ความแม่นยำขึ้นกับความคมชัดของไฟล์: โน้ตที่พิมพ์จากโปรแกรมอ่านได้ดีกว่าภาพถ่ายหรือลายมือ ตรวจและแก้โน้ตหลังนำเข้าได้ตามปกติ","Accuracy depends on how clear the file is: engraved music reads better than photos or handwriting. Check and fix notes after import"],
+["ฟังเทียบกับต้นฉบับ แล้วแก้โน้ตที่อ่านผิดได้ตามปกติ กด Ctrl+Z เพื่อกลับไปสกอร์เดิม","Listen against the original and fix any wrong notes. Press Ctrl+Z to return to the previous score"],
+["เครื่องนี้ยังไม่มีเสียงภาษาไทย · Windows: Settings → Time &amp; language → Speech → Add voices → ไทย · Mac: System Settings → Accessibility → Spoken Content → System voice → Thai (Kanya) · ติดตั้งแล้วรีโหลดหน้านี้ · ระหว่างนี้เลือกภาษา English ได้","No Thai voice on this computer · Windows: Settings → Time & language → Speech → Add voices → Thai · Mac: System Settings → Accessibility → Spoken Content → System voice → Thai (Kanya) · reload after installing · meanwhile choose English"],
+["เครื่องนี้ยังไม่มีเสียงภาษาไทย · Windows: Settings → Time & language → Speech → Add voices → ไทย · Mac: System Settings → Accessibility → Spoken Content → System voice → Thai (Kanya) · ติดตั้งแล้วรีโหลดหน้านี้ · ระหว่างนี้เลือกภาษา English ได้","No Thai voice on this computer · Windows: Settings → Time & language → Speech → Add voices → Thai · Mac: System Settings → Accessibility → Spoken Content → System voice → Thai (Kanya) · reload after installing · meanwhile choose English"],
+["ไทย + English (อ่านไทยก่อน แล้วตามด้วยอังกฤษ)","Thai + English (Thai first, then English)"],
+["เปลี่ยนภาษา: ไทย → English → ไทย + English","Change language: Thai → English → Thai + English"],
+["บนกระดาษโน้ต: เลื่อนทีละโน้ต (อ่านชื่อโน้ตให้ทุกครั้ง)","On the score: move note by note (reads each note)"],
+["บนกระดาษโน้ต: ย้ายบรรทัด","On the score: move between staves"],
+["ไม่มีเสียงภาษาไทยในเครื่อง","No Thai voice installed"],
+["เสียงในเครื่อง","device voice"], ["เสียง Claude","Claude voice"], ["โปรแกรมอ่านหน้าจอ","screen reader"],
+["F6 หรือ F8","F6 or F8"], ["Tab / ลูกศร","Tab / arrows"],
+["ความเร็วเสียงพูด","Speech speed"],
+["ยังไม่มีเครื่องดนตรี — เพิ่มจากแท็บ “เครื่องดนตรี”","No instruments yet — add one from the Instruments tab"],
+["โหลดเอนจินโน้ตไม่สำเร็จ — ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีโหลด","Could not load the notation engine — check your internet connection and reload"],
+["เครื่องลมไม้","Woodwinds"], ["แซกโซโฟน","Saxophones"], ["เครื่องทองเหลือง","Brass"], ["เครื่องกระทบ","Percussion"], ["กีตาร์ / เบส","Guitar / bass"], ["คีย์บอร์ด","Keyboards"], ["ขับร้อง","Voices"], ["เครื่องสาย","Strings"],
+["MuBiTo ส้ม","MuBiTo orange"], ["Midnight น้ำเงิน","Midnight blue"], ["Forest เขียว","Forest green"], ["Rose ชมพู","Rose pink"], ["Violet ม่วง","Violet"], ["Graphite เทา","Graphite gray"], ["Daylight สว่าง","Daylight"], ["Ocean ฟ้า","Ocean blue"], ["Mint มินต์","Mint"],
+["ไม่พบคำสั่ง","No commands found","未找到命令","コマンドが見つかりません","명령 없음","No se encontraron comandos","Aucune commande","Keine Befehle","Nenhum comando","Команды не найдены","Không tìm thấy lệnh","Perintah tidak ditemukan"],
+["Enter = ตกลง · Esc = ยกเลิก","Enter = OK · Esc = cancel","Enter = 确定 · Esc = 取消","Enter = OK · Esc = キャンセル","Enter = 확인 · Esc = 취소","Enter = aceptar · Esc = cancelar","Entrée = OK · Échap = annuler","Enter = OK · Esc = Abbrechen","Enter = OK · Esc = cancelar","Enter — ОК · Esc — отмена","Enter = OK · Esc = hủy","Enter = OK · Esc = batal"],
+["เนื้อร้อง — Space/Tab ไปโน้ตถัดไป, - ตัดพยางค์","Lyrics — Space/Tab next note, - splits syllables"],
+["คอร์ด — Space ไปตัวถัดไป","Chord — Space for the next"],
+["Tempo เช่น “Allegro 132” หรือ “96”","Tempo, e.g. “Allegro 132” or “96”"],
+["แทรกก่อนห้องที่เลือก (ห้อง","Inserted before the selected measure (measure"],
+["ลา","la"], ["(เบราว์เซอร์)","(browser)"]
+];
+
+/* ================= Menu language (UI translation) =================
+   The app is written in Thai. This layer translates what is on screen into the chosen
+   language, keeps the original Thai so switching back is exact, and never touches the score. */
+const I18N_PAT = [
+  // pattern rows: Thai with {0},{1}… then en, zh, ja, ko, es, fr, de, pt, ru, vi, id (missing → English)
+  ["เพิ่ม {0} ห้องท้ายเพลง — ตอนนี้มี {1} ห้อง", "Added {0} measure(s) at the end — now {1} measures", "已在末尾添加 {0} 个小节 — 现在共 {1} 个", "末尾に {0} 小節追加 — 現在 {1} 小節", "끝에 {0}마디 추가 — 현재 {1}마디", "Se añadieron {0} compases al final — ahora hay {1}", "{0} mesure(s) ajoutée(s) à la fin — {1} au total", "{0} Takt(e) am Ende angefügt — jetzt {1} Takte", "{0} compasso(s) adicionado(s) no fim — agora {1}", "Добавлено тактов в конец: {0} — всего {1}", "Đã thêm {0} ô ở cuối — hiện có {1} ô", "Ditambahkan {0} birama di akhir — sekarang {1} birama"],
+  ["แทรก {0} ห้องที่ตำแหน่งห้อง {1}", "Inserted {0} measure(s) at measure {1}", "已在第 {1} 小节插入 {0} 个小节", "小節 {1} に {0} 小節挿入", "{1}마디 위치에 {0}마디 삽입", "Se insertaron {0} compases en el compás {1}", "{0} mesure(s) insérée(s) à la mesure {1}", "{0} Takt(e) bei Takt {1} eingefügt", "{0} compasso(s) inserido(s) no compasso {1}", "Вставлено тактов: {0} в позиции {1}", "Đã chèn {0} ô tại ô {1}", "Disisipkan {0} birama di birama {1}"],
+  ["ลบห้อง {0} แล้ว — Ctrl+Z เพื่อย้อน", "Deleted measure {0} — Ctrl+Z to undo", "已删除第 {0} 小节 — Ctrl+Z 撤销", "小節 {0} を削除 — Ctrl+Z で元に戻す", "{0}마디 삭제 — Ctrl+Z로 되돌리기", "Compás {0} eliminado — Ctrl+Z para deshacer", "Mesure {0} supprimée — Ctrl+Z pour annuler", "Takt {0} gelöscht — Strg+Z zum Rückgängigmachen", "Compasso {0} excluído — Ctrl+Z para desfazer", "Такт {0} удалён — Ctrl+Z для отмены", "Đã xóa ô {0} — Ctrl+Z để hoàn tác", "Birama {0} dihapus — Ctrl+Z untuk urungkan"],
+  ["ทรานสโพส {0} ครึ่งเสียง", "Transposed {0} semitones", "已移调 {0} 个半音", "{0} 半音移調", "{0}반음 이조", "Transportado {0} semitonos", "Transposé de {0} demi-tons", "Um {0} Halbtöne transponiert", "Transposto {0} semitons", "Транспонировано на {0} полутонов", "Đã dịch giọng {0} nửa cung", "Ditransposisi {0} semiton"],
+  ["คัดลอก {0} ห้อง × {1} บรรทัด", "Copied {0} measures × {1} staves", "已复制 {0} 小节 × {1} 行", "{0} 小節 × {1} 段をコピー", "{0}마디 × {1}보표 복사", "Copiados {0} compases × {1} pentagramas", "{0} mesures × {1} portées copiées", "{0} Takte × {1} Systeme kopiert", "Copiados {0} compassos × {1} pautas", "Скопировано: {0} тактов × {1} станов", "Đã sao chép {0} ô × {1} khuông", "Disalin {0} birama × {1} paranada"],
+  ["คัดลอกโน้ต {0} ตัว", "Copied {0} notes", "已复制 {0} 个音符", "{0} 音符をコピー", "음표 {0}개 복사", "Copiadas {0} notas", "{0} notes copiées", "{0} Noten kopiert", "Copiadas {0} notas", "Скопировано нот: {0}", "Đã sao chép {0} nốt", "Disalin {0} not"],
+  ["จัดหน้า {0} ห้องต่อบรรทัดทุกบรรทัด", "Layout: {0} measures on every line", "版面：每行 {0} 小节", "レイアウト: 各段 {0} 小節", "레이아웃: 모든 줄 {0}마디", "Diseño: {0} compases por línea", "Mise en page : {0} mesures par ligne", "Layout: {0} Takte pro Zeile", "Layout: {0} compassos por linha", "Макет: {0} тактов в строке", "Bố cục: {0} ô mỗi dòng", "Tata letak: {0} birama per baris"],
+  ["{0} ห้อง · {1} บรรทัด · {2} หน้า · {3} โน้ต", "{0} measures · {1} staves · {2} pages · {3} notes", "{0} 小节 · {1} 行 · {2} 页 · {3} 音符", "{0} 小節 · {1} 段 · {2} ページ · {3} 音符", "{0}마디 · {1}보표 · {2}페이지 · 음표 {3}", "{0} compases · {1} pentagramas · {2} páginas · {3} notas", "{0} mesures · {1} portées · {2} pages · {3} notes", "{0} Takte · {1} Systeme · {2} Seiten · {3} Noten", "{0} compassos · {1} pautas · {2} páginas · {3} notas", "{0} тактов · {1} станов · {2} стр. · {3} нот", "{0} ô · {1} khuông · {2} trang · {3} nốt", "{0} birama · {1} paranada · {2} halaman · {3} not"],
+  ["ห้อง 1–{0}", "Measures 1–{0}", "小节 1–{0}", "小節 1–{0}", "마디 1–{0}", "Compases 1–{0}", "Mesures 1–{0}", "Takte 1–{0}", "Compassos 1–{0}", "Такты 1–{0}", "Ô 1–{0}", "Birama 1–{0}"],
+  ["{0} หน้า", "{0} pages", "{0} 页", "{0} ページ", "{0}페이지", "{0} páginas", "{0} pages", "{0} Seiten", "{0} páginas", "Страниц: {0}", "{0} trang", "{0} halaman"],
+  ["{0} ห้อง", "{0} measures", "{0} 小节", "{0} 小節", "{0}마디", "{0} compases", "{0} mesures", "{0} Takte", "{0} compassos", "Тактов: {0}", "{0} ô", "{0} birama"],
+  ["{0} บรรทัด", "{0} staves", "{0} 行谱表", "{0} 段", "{0}보표", "{0} pentagramas", "{0} portées", "{0} Systeme", "{0} pautas", "Станов: {0}", "{0} khuông", "{0} paranada"],
+  ["ห้องที่ {0}", "Measure {0}", "第 {0} 小节", "小節 {0}", "{0}마디", "Compás {0}", "Mesure {0}", "Takt {0}", "Compasso {0}", "Такт {0}", "Ô nhịp {0}", "Birama {0}"],
+  ["ห้อง {0}", "Measure {0}", "第 {0} 小节", "小節 {0}", "{0}마디", "Compás {0}", "Mesure {0}", "Takt {0}", "Compasso {0}", "Такт {0}", "Ô {0}", "Birama {0}"],
+  ["เสียง {0}", "Voice {0}", "声部 {0}", "声部 {0}", "성부 {0}", "Voz {0}", "Voix {0}", "Stimme {0}", "Voz {0}", "Голос {0}", "Bè {0}", "Suara {0}"],
+  ["เขบ็ต {0} ชั้น", "{0}-flag note", "{0} 条符尾音符", "旗 {0} 本の音符", "꼬리 {0}개 음표", "nota de {0} corchetes", "note à {0} crochets", "Note mit {0} Fähnchen", "nota de {0} colchetes", "нота с {0} флажками", "nốt {0} móc", "not {0} bendera"],
+  ["{0} ห้องต่อบรรทัด", "{0} measures per line", "每行 {0} 小节", "1段 {0} 小節", "줄당 {0}마디", "{0} compases por línea", "{0} mesures par ligne", "{0} Takte pro Zeile", "{0} compassos por linha", "{0} тактов в строке", "{0} ô mỗi dòng", "{0} birama per baris"],
+  ["สร้าง “{0}” แล้ว — กด N เพื่อเริ่มใส่โน้ต", "Created “{0}” — press N to start entering notes", "已创建“{0}” — 按 N 开始输入音符", "「{0}」を作成 — N で音符入力開始", "“{0}” 생성됨 — N을 눌러 음표 입력", "Se creó “{0}” — pulsa N para escribir notas", "« {0} » créée — N pour saisir des notes", "„{0}“ erstellt — N für Noteneingabe", "“{0}” criada — pressione N para inserir notas", "Создано «{0}» — нажмите N для ввода нот", "Đã tạo “{0}” — nhấn N để nhập nốt", "“{0}” dibuat — tekan N untuk input not"],
+  ["เปิด “{0}” แล้ว", "Opened “{0}”", "已打开“{0}”", "「{0}」を開きました", "“{0}” 열림", "Se abrió “{0}”", "« {0} » ouvert", "„{0}“ geöffnet", "“{0}” aberto", "Открыто «{0}»", "Đã mở “{0}”", "“{0}” dibuka"],
+  ["ไม่พบ “{0}”", "No results for “{0}”", "未找到“{0}”", "「{0}」は見つかりません", "“{0}” 없음", "Sin resultados para “{0}”", "Aucun résultat pour « {0} »", "Keine Treffer für „{0}“", "Nada encontrado para “{0}”", "Ничего не найдено: «{0}»", "Không tìm thấy “{0}”", "Tidak ditemukan “{0}”"],
+  ["บันทึกลงเครื่องแล้ว: {0}", "Saved to computer: {0}", "已保存到电脑：{0}", "PCに保存: {0}", "컴퓨터에 저장됨: {0}", "Guardado en el equipo: {0}", "Enregistré : {0}", "Gespeichert: {0}", "Salvo no computador: {0}", "Сохранено: {0}", "Đã lưu vào máy: {0}", "Tersimpan: {0}"],
+  ["เปิดไฟล์ไม่ได้: {0}", "Could not open the file: {0}", "无法打开文件：{0}", "ファイルを開けません: {0}", "파일을 열 수 없음: {0}", "No se pudo abrir el archivo: {0}", "Impossible d’ouvrir le fichier : {0}", "Datei konnte nicht geöffnet werden: {0}", "Não foi possível abrir: {0}", "Не удалось открыть файл: {0}", "Không mở được tệp: {0}", "Gagal membuka file: {0}"],
+  ["ทำไม่สำเร็จ: {0}", "Could not do that: {0}", "操作失败：{0}", "実行できません: {0}", "실행 실패: {0}", "No se pudo: {0}", "Échec : {0}", "Fehlgeschlagen: {0}", "Não foi possível: {0}", "Не удалось: {0}", "Không thực hiện được: {0}", "Gagal: {0}"],
+  ["เชื่อมต่อ MIDI แล้ว พบ {0} พอร์ต", "MIDI connected — {0} port(s) found", "MIDI 已连接 — 找到 {0} 个端口", "MIDI 接続 — {0} ポート検出", "MIDI 연결됨 — 포트 {0}개", "MIDI conectado — {0} puertos", "MIDI connecté — {0} port(s)", "MIDI verbunden — {0} Port(s)", "MIDI conectado — {0} porta(s)", "MIDI подключён — портов: {0}", "Đã kết nối MIDI — {0} cổng", "MIDI terhubung — {0} port"],
+  ["ระดับเสียง {0}", "Volume {0}", "音量 {0}", "音量 {0}", "볼륨 {0}", "Volumen {0}", "Volume {0}", "Lautstärke {0}", "Volume {0}", "Громкость {0}", "Âm lượng {0}", "Volume {0}"],
+  ["แพนซ้ายขวา {0}", "Pan {0}", "声像 {0}", "パン {0}", "팬 {0}", "Panorama {0}", "Pan {0}", "Panorama {0}", "Pan {0}", "Панорама {0}", "Cân bằng {0}", "Pan {0}"],
+  ["เอาต์พุต {0}", "Output {0}", "输出 {0}", "出力 {0}", "출력 {0}", "Salida {0}", "Sortie {0}", "Ausgang {0}", "Saída {0}", "Выход {0}", "Đầu ra {0}", "Keluaran {0}"],
+  ["เพิ่มเอฟเฟกต์ให้ {0}", "Add effect to {0}", "为 {0} 添加效果", "{0} にエフェクト追加", "{0}에 효과 추가", "Añadir efecto a {0}", "Ajouter un effet à {0}", "Effekt für {0} hinzufügen", "Adicionar efeito a {0}", "Добавить эффект: {0}", "Thêm hiệu ứng cho {0}", "Tambah efek ke {0}"],
+  ["ชนิดเอฟเฟกต์ช่อง {0}", "Effect type, slot {0}", "效果类型 槽 {0}", "エフェクト種類 スロット {0}", "효과 종류 슬롯 {0}", "Tipo de efecto, ranura {0}", "Type d’effet, emplacement {0}", "Effekttyp, Slot {0}", "Tipo de efeito, slot {0}", "Тип эффекта, слот {0}", "Loại hiệu ứng, ô {0}", "Jenis efek, slot {0}"],
+  ["แปลงหน้า {0} เป็นภาพ…", "Rendering page {0}…", "正在转换第 {0} 页…", "ページ {0} を画像化中…", "{0}페이지 변환 중…", "Convirtiendo página {0}…", "Conversion de la page {0}…", "Seite {0} wird umgewandelt…", "Convertendo página {0}…", "Обработка страницы {0}…", "Đang chuyển trang {0}…", "Mengonversi halaman {0}…"],
+  ["Claude กำลังอ่านส่วนที่ {0} จาก {1}…", "Claude is reading part {0} of {1}…", "Claude 正在识读第 {0}/{1} 部分…", "Claude が {1} 中 {0} を読み取り中…", "Claude가 {1}개 중 {0}번째 판독 중…", "Claude está leyendo la parte {0} de {1}…", "Claude lit la partie {0} sur {1}…", "Claude liest Teil {0} von {1}…", "Claude está lendo a parte {0} de {1}…", "Claude читает часть {0} из {1}…", "Claude đang đọc phần {0}/{1}…", "Claude membaca bagian {0} dari {1}…"],
+  ["อ่านเฉพาะ {0} หน้าแรกจาก {1} หน้า", "Reading only the first {0} of {1} pages"],
+  ["ลบห้อง {0}–{1} แล้ว — Ctrl+Z เพื่อย้อน", "Deleted measures {0}–{1} — Ctrl+Z to undo"],
+  ["{0} ครึ่งเสียง", "{0} semitones"],
+  ["อัตโนมัติ (ตอนนี้: {0})", "Auto (now: {0})"]
+];
+const I18N = { lang: "th", map: null, pats: [], idx: 1, obs: null, busy: false, txt: new WeakMap() };
+const I18N_ATTRS = ["title", "aria-label", "placeholder"];
+const I18N_SKIP = "#pages,script,style,textarea,[contenteditable],[data-noi18n],#docTitle,.sr-only,code,kbd";
+
+function i18nNorm(s) { return String(s).replace(/&amp;/g, "&").replace(/&nbsp;| /g, " ").replace(/\s+/g, " ").trim(); }
+function i18nBuild() {
+  const li = I18N_LANGS.findIndex(l => l[0] === I18N.lang); I18N.idx = li;
+  const pick = r => r[li] || r[1];
+  I18N.map = new Map();
+  for (const r of I18N_ROWS) { const k = i18nNorm(r[0]); if (!I18N.map.has(k)) I18N.map.set(k, pick(r)); }
+  I18N.pats = I18N_PAT.map(r => {
+    const parts = r[0].split(/\{\d\}/), esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const order = (r[0].match(/\{(\d)\}/g) || []).map(x => +x[1]);
+    return { re: new RegExp("^" + parts.map(esc).join("(.+?)") + "$"), order, out: pick(r) };
+  });
+}
+const I18N_THAI = /[฀-๿]/;
+function i18nStr(s, depth = 0) {
+  if (!s || !I18N_THAI.test(s) || I18N.lang === "th") return s;
+  const n = i18nNorm(s); if (!n) return s;
+  let r = I18N.map.get(n); if (r != null) return r;
+  for (const p of I18N.pats) {
+    const mm = p.re.exec(n);
+    if (mm) { let out = p.out; p.order.forEach((k, j) => { out = out.split("{" + k + "}").join(i18nStr(mm[j + 1], depth + 1)); }); return out; }
+  }
+  // strip leading/trailing symbols, emoji, digits and punctuation
+  const m = /^([^\p{L}]*)(.*?)([^\p{L}]*)$/u.exec(n);
+  if (m && (m[1] || m[3]) && m[2]) {
+    const lead = m[1], core = n.slice(lead.length).trim();
+    if (lead && (r = I18N.map.get(core)) != null) return lead + r;
+    if ((r = I18N.map.get(m[2])) != null) return lead + r + m[3];
+  }
+  if (depth < 4) {
+    const par = /^(.*?)\s*\(([^()]*)\)\s*$/.exec(n);
+    if (par && par[1]) return i18nStr(par[1], depth + 1) + " (" + i18nStr(par[2], depth + 1) + ")";
+    for (const sep of [" · ", " — ", " / ", ": ", ", "]) {
+      if (n.includes(sep)) { const bits = n.split(sep), tr = bits.map(b => i18nStr(b, depth + 1)); if (tr.some((t, i) => t !== bits[i])) return tr.join(sep); }
+    }
+  }
+  // bilingual labels like "Lyrics เนื้อร้อง": keep the English half
+  const latin = n.replace(/[฀-๿]+/g, " ").replace(/\s+/g, " ").replace(/\s+([,.)])/g, "$1").trim();
+  if (/[A-Za-z]{3}/.test(latin)) return latin.replace(/^[\s/·—-]+|[\s/·—-]+$/g, "");
+  if (typeof A11Y_RULES !== "undefined" && (I18N.idx === 1 || depth === 0)) for (const [re, en] of A11Y_RULES) if (re.test(n)) return n.replace(re, en);
+  return s;
+}
+function i18nSkip(el) { return !el || (el.closest && el.closest(I18N_SKIP)); }
+function i18nText(node) {
+  const cur = node.nodeValue, rec = I18N.txt.get(node);
+  let orig = cur;
+  if (rec && cur === rec.t) orig = rec.o;
+  if (I18N.lang === "th") { if (rec) { I18N.txt.delete(node); if (cur !== orig) node.nodeValue = orig; } return; }
+  if (!I18N_THAI.test(orig)) { if (rec) I18N.txt.delete(node); return; }
+  const lead = orig.match(/^\s*/)[0], trail = orig.match(/\s*$/)[0];
+  const t = lead + i18nStr(orig) .trim() + trail;
+  I18N.txt.set(node, { o: orig, t });
+  if (cur !== t) node.nodeValue = t;
+}
+function i18nAttrs(el) {
+  for (const a of I18N_ATTRS) {
+    if (!el.hasAttribute(a)) continue;
+    const cur = el.getAttribute(a), k = "data-i18o-" + a, kt = "data-i18t-" + a;
+    let orig = cur; if (el.hasAttribute(k) && el.getAttribute(kt) === cur) orig = el.getAttribute(k);
+    if (I18N.lang === "th" || !I18N_THAI.test(orig)) { if (el.hasAttribute(k)) { el.removeAttribute(k); el.removeAttribute(kt); if (cur !== orig) el.setAttribute(a, orig); } continue; }
+    const t = i18nStr(orig); el.setAttribute(k, orig); el.setAttribute(kt, t); if (cur !== t) el.setAttribute(a, t);
+  }
+}
+function i18nWalk(root) {
+  if (!root) return;
+  if (root.nodeType === 3) { if (!i18nSkip(root.parentElement)) i18nText(root); return; }
+  if (root.nodeType !== 1 || i18nSkip(root)) return;
+  i18nAttrs(root);
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: n => n.nodeType === 1 && n.matches(I18N_SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  let n; while ((n = w.nextNode())) { if (n.nodeType === 3) i18nText(n); else i18nAttrs(n); }
+}
+function i18nApply(fn) {
+  I18N.busy = true;
+  try { fn(); } finally { if (I18N.obs) I18N.obs.takeRecords(); I18N.busy = false; }
+}
+function i18nObserve() {
+  if (I18N.obs || typeof MutationObserver === "undefined") return;
+  I18N.obs = new MutationObserver(recs => {
+    if (I18N.busy || I18N.lang === "th") return;
+    i18nApply(() => {
+      for (const r of recs) {
+        if (r.type === "childList") r.addedNodes.forEach(i18nWalk);
+        else if (r.type === "characterData") { if (!i18nSkip(r.target.parentElement)) i18nText(r.target); }
+        else if (r.type === "attributes" && !i18nSkip(r.target)) i18nAttrs(r.target);
+      }
+    });
+  });
+  I18N.obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: I18N_ATTRS });
+}
+function i18nRestore(root) { const keep = I18N.lang; I18N.lang = "th"; i18nWalk(root); I18N.lang = keep; }
+function i18nSetLang(code, quiet) {
+  if (!I18N_LANGS.some(l => l[0] === code)) code = "th";
+  const prev = I18N.lang; I18N.lang = code;
+  try { localStorage.setItem("nota-ui-lang", code); } catch (e) {}
+  document.documentElement.lang = code;
+  i18nBuild();
+  i18nApply(() => i18nWalk(document.body));
+  const sel = document.getElementById("uiLang"); if (sel && sel.value !== code) sel.value = code;
+  if (!quiet && prev !== code) {
+    const name = (I18N_LANGS.find(l => l[0] === code) || [])[1];
+    if (typeof toast === "function") toast("ภาษาเมนู: " + name);
+  }
+}
+function i18nPicker() {
+  if (document.getElementById("uiLang")) return;
+  const wrap = document.createElement("label"); wrap.className = "uilang"; wrap.title = "ภาษาเมนู";
+  wrap.innerHTML = '<i aria-hidden="true">🌐</i><select id="uiLang" aria-label="ภาษาเมนู" data-noi18n>' +
+    I18N_LANGS.map(([c, n]) => `<option value="${c}">${n}</option>`).join("") + "</select>";
+  const anchor = document.getElementById("btnTheme"), bar = document.querySelector(".topacts");
+  if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(wrap, anchor); else if (bar) bar.appendChild(wrap); else return;
+  const sel = wrap.querySelector("select"); sel.value = I18N.lang;
+  sel.addEventListener("change", () => i18nSetLang(sel.value));
+}
+function i18nWire() {
+  const _do = doAction; doAction = function (act) {
+    if (act && /^uilang:/.test(act)) return i18nSetLang(act.slice(7));
+    if (act === "uilang") { const s = document.getElementById("uiLang"); if (s) { s.focus(); if (s.showPicker) try { s.showPicker(); } catch (e) {} } return; }
+    return _do.apply(this, arguments);
+  };
+  if (typeof COMMANDS !== "undefined" && Array.isArray(COMMANDS)) {
+    COMMANDS.push(["Menu language ภาษาเมนู 🌐", "", "uilang"]);
+    for (const [c, n] of I18N_LANGS) COMMANDS.push([`Menu language: ${n}`, "", "uilang:" + c]);
+  }
+  // spoken guide: describe controls from their original Thai labels so both Thai and English speech stay correct
+  if (typeof a11yDescribe === "function") {
+    const _desc = a11yDescribe;
+    a11yDescribe = function (el, lg) {
+      if (I18N.lang === "th" || !el || !el.closest) return _desc.apply(this, arguments);
+      const root = (el.closest(".field,.kv,label,.colorrow,.tempo,.fxp") || el).parentElement || el;
+      let out;
+      i18nApply(() => { i18nRestore(root); try { out = _desc.call(this, el, lg); } finally { i18nWalk(root); } });
+      return out;
+    };
+  }
+}
+function i18nBoot() {
+  let code = "th";
+  try { code = localStorage.getItem("nota-ui-lang") || "th"; } catch (e) {}
+  I18N.lang = code; i18nBuild();
+  i18nPicker(); i18nWire(); i18nObserve();
+  if (code !== "th") i18nSetLang(code, true);
+}
+i18nBoot();
 </script>
 </body></html>
