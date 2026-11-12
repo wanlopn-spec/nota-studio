@@ -26,6 +26,8 @@
 
 ## คู่มือ
 
+- [คู่มือการใช้งานภาษาไทย (PDF)](docs/nota-studio-manual-th.pdf)
+- [User guide in English (PDF)](docs/nota-studio-manual-en.pdf)
 - [คู่มือการใช้งาน (Markdown)](docs/manual.md)
 - [คู่มือการใช้งาน (Word)](docs/nota-studio-manual.docx)
 
